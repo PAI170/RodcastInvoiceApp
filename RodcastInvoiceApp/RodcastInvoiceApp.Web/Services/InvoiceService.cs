@@ -8,6 +8,7 @@ using RodcastInvoiceApp.Web.DataTransferObjects.Invoice;
 using RodcastInvoiceApp.Web.DataTransferObjects.Payment;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
 {
@@ -17,25 +18,35 @@ namespace RodcastInvoiceApp.Web.Services
         private readonly IValidator<InvoiceCreateDto> _invoiceValidator;
         private readonly IValidator<PaymentCreateDto> _paymentValidator;
         private readonly IEnumerable<IBillingStrategy> _billingStrategies;
+        private readonly ICurrentUserAccessor _currentUser;
 
         public InvoiceService(
             AppDbContext context,
             IValidator<InvoiceCreateDto> invoiceValidator,
             IValidator<PaymentCreateDto> paymentValidator,
-            IEnumerable<IBillingStrategy> billingStrategies)
+            IEnumerable<IBillingStrategy> billingStrategies,
+            ICurrentUserAccessor currentUser)
         {
             _context = context;
             _invoiceValidator = invoiceValidator;
             _paymentValidator = paymentValidator;
             _billingStrategies = billingStrategies;
+            _currentUser = currentUser;
         }
 
-        public async Task<IEnumerable<InvoiceResponseDto>> GetAllAsync(int? projectId = null, int? take = null)
+        public async Task<IEnumerable<InvoiceResponseDto>> GetAllAsync(
+            int? projectId = null, int? take = null, DateTime? fromDate = null, DateTime? toDate = null)
         {
             var query = IncludeAll(_context.Invoices.AsNoTracking());
 
             if (projectId is not null)
                 query = query.Where(i => i.ProjectId == projectId);
+
+            if (fromDate is not null)
+                query = query.Where(i => i.InvoiceDate >= fromDate);
+
+            if (toDate is not null)
+                query = query.Where(i => i.InvoiceDate < toDate.Value.AddDays(1));
 
             IQueryable<Invoice> orderedQuery = query.OrderByDescending(i => i.InvoiceDate);
 
@@ -72,6 +83,8 @@ namespace RodcastInvoiceApp.Web.Services
             var bankAccountExists = await _context.BankAccounts.AnyAsync(b => b.Id == dto.BankAccountId);
             if (!bankAccountExists)
                 throw new NotFoundException("Cuenta bancaria no encontrada.");
+
+            await EnsureInvoiceNumberIsUniqueAsync(dto.InvoiceNumber);
 
             var strategy = _billingStrategies.FirstOrDefault(s => s.BillingType == project.BillingType)
                 ?? throw new InvalidOperationException(
@@ -118,6 +131,8 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task<InvoiceResponseDto> UpdateAsync(int id, InvoiceCreateDto dto)
         {
+            await _currentUser.EnsureAdminAsync();
+
             var result = await _invoiceValidator.ValidateAsync(dto);
             if (!result.IsValid)
                 throw new BadRequestException(
@@ -143,6 +158,8 @@ namespace RodcastInvoiceApp.Web.Services
             var bankAccountExists = await _context.BankAccounts.AnyAsync(b => b.Id == dto.BankAccountId);
             if (!bankAccountExists)
                 throw new NotFoundException("Cuenta bancaria no encontrada.");
+
+            await EnsureInvoiceNumberIsUniqueAsync(dto.InvoiceNumber, excludeInvoiceId: id);
 
             var strategy = _billingStrategies.FirstOrDefault(s => s.BillingType == project.BillingType)
                 ?? throw new InvalidOperationException(
@@ -203,6 +220,8 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task DeleteAsync(int id)
         {
+            await _currentUser.EnsureAdminAsync();
+
             var invoice = await _context.Invoices
                 .Include(i => i.Payments)
                 .FirstOrDefaultAsync(i => i.Id == id)
@@ -245,6 +264,16 @@ namespace RodcastInvoiceApp.Web.Services
             return payment.Adapt<PaymentResponseDto>();
         }
 
+        private async Task EnsureInvoiceNumberIsUniqueAsync(string invoiceNumber, int? excludeInvoiceId = null)
+        {
+            var query = _context.Invoices.Where(i => i.InvoiceNumber == invoiceNumber);
+            if (excludeInvoiceId is not null)
+                query = query.Where(i => i.Id != excludeInvoiceId);
+
+            if (await query.AnyAsync())
+                throw new ConflictException($"Ya existe una factura con el número '{invoiceNumber}'.");
+        }
+
         private static BillingInput BuildBillingInput(BillingType billingType, InvoiceCreateDto dto)
         {
             switch (billingType)
@@ -271,7 +300,8 @@ namespace RodcastInvoiceApp.Web.Services
                         TicketNumber = dto.TicketNumber,
                         City = dto.City,
                         SlaType = dto.SlaType,
-                        ApprovedAdditionalMinutes = dto.ApprovedAdditionalMinutes
+                        ApprovedAdditionalMinutes = dto.ApprovedAdditionalMinutes,
+                        OvertimeHours = dto.OvertimeHoursToInvoice
                     };
 
                 default:

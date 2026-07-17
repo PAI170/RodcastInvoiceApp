@@ -1,10 +1,12 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using RodcastInvoiceApp.Web.Data.Common;
 using RodcastInvoiceApp.Web.Data.Models;
 
 namespace RodcastInvoiceApp.Web.Data
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext<ApplicationUser>
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -69,6 +71,11 @@ namespace RodcastInvoiceApp.Web.Data
                 .Property(i => i.Status)
                 .HasConversion<string>()
                 .HasMaxLength(10);
+
+            // El numero de factura es el identificador visible para el cliente: no puede repetirse.
+            modelBuilder.Entity<Invoice>()
+                .HasIndex(i => i.InvoiceNumber)
+                .IsUnique();
 
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.TimesheetExceptions)

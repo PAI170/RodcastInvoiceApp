@@ -1,4 +1,6 @@
 @page "/company-settings"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.CompanySettings
 @using RodcastInvoiceApp.Web.Exceptions
 @using RodcastInvoiceApp.Web.Interfaces

@@ -62,8 +62,12 @@ else
                         <td>@client.SupplierIdAssigned</td>
                         <td>@client.ProjectCount</td>
                         <td>
-                            <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(client)">Editar</button>
-                            <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(client.Id)">Eliminar</button>
+                            <AuthorizeView Roles="Admin">
+                                <Authorized>
+                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(client)">Editar</button>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(client.Id)">Eliminar</button>
+                                </Authorized>
+                            </AuthorizeView>
                         </td>
                     </tr>
                 }
@@ -72,31 +76,35 @@ else
     </table>
 }
 
-<h2>Nuevo cliente</h2>
+<AuthorizeView Roles="Admin" Context="authContext">
+    <Authorized>
+        <h2>Nuevo cliente</h2>
 
-<EditForm Model="newClient" FormName="NewClientForm" OnValidSubmit="HandleCreate">
-    <div class="row g-2">
-        <div class="col-md-3">
-            <InputText class="form-control" placeholder="Nombre" @bind-Value="newClient.Name" />
-        </div>
-        <div class="col-md-3">
-            <InputText class="form-control" placeholder="Dirección" @bind-Value="newClient.Address" />
-        </div>
-        <div class="col-md-2">
-            <InputText class="form-control" placeholder="VAT ID" @bind-Value="newClient.VatId" />
-        </div>
-        <div class="col-md-2">
-            <InputText class="form-control" placeholder="País" @bind-Value="newClient.Country" />
-        </div>
-        <div class="col-md-2">
-            <InputText class="form-control" placeholder="Moneda" @bind-Value="newClient.DefaultCurrency" />
-        </div>
-        <div class="col-md-3">
-            <InputText class="form-control" placeholder="ID de proveedor asignado (opcional)" @bind-Value="newClient.SupplierIdAssigned" />
-        </div>
-    </div>
-    <button type="submit" class="btn btn-primary mt-2">Crear cliente</button>
-</EditForm>
+        <EditForm Model="newClient" FormName="NewClientForm" OnValidSubmit="HandleCreate">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <InputText class="form-control" placeholder="Nombre" @bind-Value="newClient.Name" />
+                </div>
+                <div class="col-md-3">
+                    <InputText class="form-control" placeholder="Dirección" @bind-Value="newClient.Address" />
+                </div>
+                <div class="col-md-2">
+                    <InputText class="form-control" placeholder="VAT ID" @bind-Value="newClient.VatId" />
+                </div>
+                <div class="col-md-2">
+                    <InputText class="form-control" placeholder="País" @bind-Value="newClient.Country" />
+                </div>
+                <div class="col-md-2">
+                    <InputText class="form-control" placeholder="Moneda" @bind-Value="newClient.DefaultCurrency" />
+                </div>
+                <div class="col-md-3">
+                    <InputText class="form-control" placeholder="ID de proveedor asignado (opcional)" @bind-Value="newClient.SupplierIdAssigned" />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">Crear cliente</button>
+        </EditForm>
+    </Authorized>
+</AuthorizeView>
 
 @code {
     private List<ClientResponseDto>? clients;
@@ -124,7 +132,7 @@ else
             newClient = new ClientCreateDto();
             await LoadClientsAsync();
         }
-        catch (Exception ex) when (ex is BadRequestException or ConflictException)
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or ForbiddenException)
         {
             errorMessage = ex.Message;
         }
@@ -161,7 +169,7 @@ else
             CancelEdit();
             await LoadClientsAsync();
         }
-        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException)
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException or ForbiddenException)
         {
             errorMessage = ex.Message;
         }
@@ -175,7 +183,7 @@ else
             await ClientService.DeleteAsync(id);
             await LoadClientsAsync();
         }
-        catch (Exception ex) when (ex is ConflictException or NotFoundException)
+        catch (Exception ex) when (ex is ConflictException or NotFoundException or ForbiddenException)
         {
             errorMessage = ex.Message;
         }

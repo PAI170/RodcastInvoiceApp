@@ -1,4 +1,6 @@
 @page "/bank-accounts"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.BankAccount
 @using RodcastInvoiceApp.Web.Exceptions
 @using RodcastInvoiceApp.Web.Interfaces

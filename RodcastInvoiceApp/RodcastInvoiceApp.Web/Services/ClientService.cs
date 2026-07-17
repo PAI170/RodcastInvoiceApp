@@ -5,6 +5,7 @@ using RodcastInvoiceApp.Web.Data;
 using RodcastInvoiceApp.Web.DataTransferObjects.Client;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
 {
@@ -13,15 +14,18 @@ namespace RodcastInvoiceApp.Web.Services
         private readonly AppDbContext _context;
         private readonly IValidator<ClientCreateDto> _createValidator;
         private readonly IValidator<ClientUpdateDto> _updateValidator;
+        private readonly ICurrentUserAccessor _currentUser;
 
         public ClientService(
             AppDbContext context,
             IValidator<ClientCreateDto> createValidator,
-            IValidator<ClientUpdateDto> updateValidator)
+            IValidator<ClientUpdateDto> updateValidator,
+            ICurrentUserAccessor currentUser)
         {
             _context = context;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _currentUser = currentUser;
         }
 
         public async Task<IEnumerable<ClientResponseDto>> GetAllAsync(int? take = null)
@@ -49,6 +53,7 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task<ClientResponseDto> CreateAsync(ClientCreateDto dto)
         {
+            await _currentUser.EnsureAdminAsync();
             await ValidateAsync(_createValidator, dto);
             await ValidateUniqueFieldsAsync(dto.Name, dto.VatId);
 
@@ -62,6 +67,7 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task<ClientResponseDto> UpdateAsync(int id, ClientUpdateDto dto)
         {
+            await _currentUser.EnsureAdminAsync();
             await ValidateAsync(_updateValidator, dto);
 
             var client = await _context.Clients
@@ -79,6 +85,8 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task DeleteAsync(int id)
         {
+            await _currentUser.EnsureAdminAsync();
+
             var client = await _context.Clients
                 .Include(c => c.Projects)
                 .FirstOrDefaultAsync(c => c.Id == id)

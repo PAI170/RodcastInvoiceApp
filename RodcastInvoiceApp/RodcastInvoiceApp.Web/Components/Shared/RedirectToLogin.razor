@@ -1,0 +1,12 @@
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override void OnInitialized()
+    {
+        var returnUrl = "/" + NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+
+        // forceLoad: rompe el circuito de SignalR y hace un GET normal, que es
+        // lo que necesita la cookie de autenticacion para redirigir a login.
+        NavigationManager.NavigateTo($"/account/login?ReturnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
+    }
+}

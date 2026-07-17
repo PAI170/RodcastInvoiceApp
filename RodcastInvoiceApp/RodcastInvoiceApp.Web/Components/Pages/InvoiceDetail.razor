@@ -98,8 +98,12 @@ else
         </a>
         @if (invoice.CanEditOrDelete)
         {
-            <a class="btn btn-outline-primary btn-sm" href="@($"/invoices/{invoice.Id}/edit")">Editar</a>
-            <button class="btn btn-outline-danger btn-sm" @onclick="HandleDelete">Eliminar factura</button>
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <a class="btn btn-outline-primary btn-sm" href="@($"/invoices/{invoice.Id}/edit")">Editar</a>
+                    <button class="btn btn-outline-danger btn-sm" @onclick="HandleDelete">Eliminar factura</button>
+                </Authorized>
+            </AuthorizeView>
         }
     </div>
     @if (!invoice.CanEditOrDelete)
@@ -221,7 +225,7 @@ else
             await InvoiceService.DeleteAsync(InvoiceId);
             NavigationManager.NavigateTo("/invoices");
         }
-        catch (Exception ex) when (ex is ConflictException or NotFoundException)
+        catch (Exception ex) when (ex is ConflictException or NotFoundException or ForbiddenException)
         {
             errorMessage = ex.Message;
         }

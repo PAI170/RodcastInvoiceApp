@@ -12,6 +12,7 @@
 @inject IBankAccountService BankAccountService
 @inject IPriceRuleService PriceRuleService
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>@(InvoiceId.HasValue ? "Editar Factura" : "Nueva Factura")</PageTitle>
 
@@ -61,6 +62,11 @@
 @if (projects is null || bankAccounts is null || isLoadingInvoice)
 {
     <p><em>Cargando...</em></p>
+}
+else if (InvoiceId.HasValue && !canEditInvoice)
+{
+    <div class="alert alert-danger">No tenés permiso para editar facturas.</div>
+    <a class="btn btn-outline-secondary" href="/invoices">Volver a facturas</a>
 }
 else
 {
@@ -181,16 +187,21 @@ else
                     </InputSelect>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Minutos adicionales aprobados por el SDM</label>
-                    <InputNumber class="form-control" @bind-Value="dto.ApprovedAdditionalMinutes" />
+                    <label class="form-label">Duración del evento (horas)</label>
+                    <InputNumber class="form-control" step="0.25" @bind-Value="ticketDurationHours" @bind-Value:after="OnDurationChanged" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Horas extra</label>
+                    <InputNumber class="form-control" step="0.01" @bind-Value="dto.OvertimeHoursToInvoice" />
                 </div>
             </div>
             <p class="text-muted mt-1">
-                Si el SDM no aprobó tiempo adicional, deja los minutos en 0.
+                La tarifa base incluye la primera hora. Tiempo adicional aprobado por el SDM: <strong>@AdditionalMinutesPreview min</strong>
+                (se factura en bloques de 15 min). Si el SDM no aprobó tiempo adicional, deja la duración en 1h o menos.
             </p>
         }
 
-        <button type="submit" class="btn btn-primary mt-3" disabled="@(dto.ProjectId == 0)">
+        <button type="submit" class="btn btn-primary mt-3" disabled="@(dto.ProjectId == 0 || isSubmitting)">
             @(InvoiceId.HasValue ? "Guardar cambios" : "Crear factura")
         </button>
         <a class="btn btn-outline-secondary mt-3" href="@CancelUrl">Cancelar</a>
@@ -209,6 +220,17 @@ else
     private InvoiceResponseDto? createdInvoice;
     private string? errorMessage;
     private bool isLoadingInvoice;
+    private bool isSubmitting;
+    private bool canEditInvoice = true;
+    private decimal ticketDurationHours = 1m;
+
+    private int AdditionalMinutesPreview => dto.ApprovedAdditionalMinutes;
+
+    private void OnDurationChanged()
+    {
+        var extraMinutes = (ticketDurationHours - 1m) * 60m;
+        dto.ApprovedAdditionalMinutes = extraMinutes > 0 ? (int)Math.Round(extraMinutes, MidpointRounding.AwayFromZero) : 0;
+    }
 
     private string CancelUrl => InvoiceId.HasValue ? $"/invoices/{InvoiceId.Value}" : "/invoices";
 
@@ -228,6 +250,11 @@ else
 
         if (InvoiceId.HasValue)
         {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            canEditInvoice = authState.User.IsInRole("Admin");
+            if (!canEditInvoice)
+                return;
+
             isLoadingInvoice = true;
             var invoice = await InvoiceService.GetByIdAsync(InvoiceId.Value);
             selectedProject = projects.FirstOrDefault(p => p.Id == invoice.ProjectId);
@@ -252,6 +279,8 @@ else
                 ApprovedAdditionalMinutes = invoice.AdditionalMinutes ?? 0
             };
 
+            ticketDurationHours = 1m + (invoice.AdditionalMinutes ?? 0) / 60m;
+
             if (selectedProject is not null && selectedProject.BillingType == BillingType.PerTicket)
             {
                 priceRulesForProject = (await PriceRuleService.GetAllAsync(invoice.ProjectId)).ToList();
@@ -267,6 +296,8 @@ else
         priceRulesForProject.Clear();
         dto.City = null;
         dto.SlaType = null;
+        dto.ApprovedAdditionalMinutes = 0;
+        ticketDurationHours = 1m;
 
         if (selectedProject is not null && selectedProject.BillingType == BillingType.PerTicket)
         {
@@ -276,6 +307,10 @@ else
 
     private async Task HandleSubmit()
     {
+        if (isSubmitting)
+            return;
+
+        isSubmitting = true;
         errorMessage = null;
         try
         {
@@ -287,11 +322,22 @@ else
             else
             {
                 createdInvoice = await InvoiceService.CreateAsync(dto);
+
+                // Limpia el formulario: evita que datos de la factura ya creada
+                // queden listos para reenviarse por accidente.
+                dto = new InvoiceCreateDto();
+                selectedProject = null;
+                priceRulesForProject.Clear();
+                ticketDurationHours = 1m;
             }
         }
-        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException)
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException or ForbiddenException)
         {
             errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
         }
     }
 }

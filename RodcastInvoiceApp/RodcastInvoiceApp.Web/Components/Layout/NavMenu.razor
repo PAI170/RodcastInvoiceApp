@@ -29,23 +29,49 @@
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="bank-accounts">
-                <i class="bi bi-bank2 me-2" aria-hidden="true"></i> Cuentas Bancarias
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="bank-accounts">
+                        <i class="bi bi-bank2 me-2" aria-hidden="true"></i> Cuentas Bancarias
+                    </NavLink>
+                </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="company-settings">
-                <i class="bi bi-building-gear me-2" aria-hidden="true"></i> Datos de la Empresa
-            </NavLink>
-        </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="company-settings">
+                        <i class="bi bi-building-gear me-2" aria-hidden="true"></i> Datos de la Empresa
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="invoices">
                 <i class="bi bi-receipt me-2" aria-hidden="true"></i> Facturas
             </NavLink>
         </div>
+
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="users">
+                        <i class="bi bi-person-gear me-2" aria-hidden="true"></i> Usuarios
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
     </nav>
+
+    <AuthorizeView>
+        <Authorized>
+            <div class="px-3 mt-4 text-white-50 small">
+                <div>@context.User.Identity?.Name</div>
+                <form method="post" action="/account/logout">
+                    <AntiforgeryToken />
+                    <button class="btn btn-link btn-sm text-white-50 p-0" type="submit">Cerrar sesión</button>
+                </form>
+            </div>
+        </Authorized>
+    </AuthorizeView>
 </div>
 

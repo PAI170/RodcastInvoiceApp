@@ -5,6 +5,7 @@ using RodcastInvoiceApp.Web.Data;
 using RodcastInvoiceApp.Web.DataTransferObjects.Project;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
 {
@@ -13,15 +14,18 @@ namespace RodcastInvoiceApp.Web.Services
         private readonly AppDbContext _context;
         private readonly IValidator<ProjectCreateDto> _createValidator;
         private readonly IValidator<ProjectUpdateDto> _updateValidator;
+        private readonly ICurrentUserAccessor _currentUser;
 
         public ProjectService(
             AppDbContext context,
             IValidator<ProjectCreateDto> createValidator,
-            IValidator<ProjectUpdateDto> updateValidator)
+            IValidator<ProjectUpdateDto> updateValidator,
+            ICurrentUserAccessor currentUser)
         {
             _context = context;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _currentUser = currentUser;
         }
 
         public async Task<IEnumerable<ProjectResponseDto>> GetAllAsync(int? clientId = null)
@@ -53,6 +57,7 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task<ProjectResponseDto> CreateAsync(ProjectCreateDto dto)
         {
+            await _currentUser.EnsureAdminAsync();
             await ValidateAsync(_createValidator, dto);
 
             var clientExists = await _context.Clients.AnyAsync(c => c.Id == dto.ClientId);
@@ -71,6 +76,7 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task<ProjectResponseDto> UpdateAsync(int id, ProjectUpdateDto dto)
         {
+            await _currentUser.EnsureAdminAsync();
             await ValidateAsync(_updateValidator, dto);
 
             var project = await _context.Projects
@@ -87,6 +93,8 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task DeleteAsync(int id)
         {
+            await _currentUser.EnsureAdminAsync();
+
             var project = await _context.Projects
                 .FirstOrDefaultAsync(p => p.Id == id)
                 ?? throw new NotFoundException("Proyecto no encontrado.");

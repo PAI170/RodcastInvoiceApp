@@ -30,5 +30,8 @@ namespace RodcastInvoiceApp.Web.Billing
         // Minutos adicionales solo si el SDM los aprobo; si no hay aprobacion, se deja en 0
         // y simplemente no se factura (decision ya tomada: no se guarda como no facturable).
         public int ApprovedAdditionalMinutes { get; set; }
+
+        // Horas extra del ticket (poco probable, mismo esquema 1.5x que monthly_retainer).
+        public decimal OvertimeHours { get; set; }
     }
 }

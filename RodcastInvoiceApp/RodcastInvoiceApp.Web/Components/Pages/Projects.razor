@@ -81,9 +81,13 @@ else
                         <td>@(project.IsActive ? "Sí" : "No")</td>
                         <td>@project.PriceRuleCount</td>
                         <td>
-                            <a class="btn btn-outline-secondary btn-sm" href="@($"/projects/{project.Id}/price-rules")">Tarifas</a>
-                            <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(project)">Editar</button>
-                            <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(project.Id)">Eliminar</button>
+                            <AuthorizeView Roles="Admin">
+                                <Authorized>
+                                    <a class="btn btn-outline-secondary btn-sm" href="@($"/projects/{project.Id}/price-rules")">Tarifas</a>
+                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(project)">Editar</button>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(project.Id)">Eliminar</button>
+                                </Authorized>
+                            </AuthorizeView>
                         </td>
                     </tr>
                 }
@@ -91,40 +95,44 @@ else
         </tbody>
     </table>
 
-    <h2>Nuevo proyecto</h2>
+    <AuthorizeView Roles="Admin" Context="authContext">
+        <Authorized>
+            <h2>Nuevo proyecto</h2>
 
-    <EditForm Model="newProject" FormName="NewProjectForm" OnValidSubmit="HandleCreate">
-        <div class="row g-2">
-            <div class="col-md-2">
-                <InputSelect class="form-select" @bind-Value="newProject.ClientId">
-                    <option value="0">Selecciona un cliente</option>
-                    @foreach (var client in clients)
-                    {
-                        <option value="@client.Id">@client.Name</option>
-                    }
-                </InputSelect>
-            </div>
-            <div class="col-md-2">
-                <InputText class="form-control" placeholder="Código" @bind-Value="newProject.Code" />
-            </div>
-            <div class="col-md-2">
-                <InputText class="form-control" placeholder="Nombre" @bind-Value="newProject.Name" />
-            </div>
-            <div class="col-md-2">
-                <InputText class="form-control" placeholder="Centro de costo (opcional)" @bind-Value="newProject.CostCenter" />
-            </div>
-            <div class="col-md-2">
-                <InputSelect class="form-select" @bind-Value="newProject.BillingType">
-                    <option value="@BillingType.MonthlyRetainer">Retainer mensual</option>
-                    <option value="@BillingType.PerTicket">Por ticket</option>
-                </InputSelect>
-            </div>
-            <div class="col-md-2">
-                <InputTextArea class="form-control" placeholder="Config (JSON)" @bind-Value="newProject.Config" />
-            </div>
-        </div>
-        <button type="submit" class="btn btn-primary mt-2">Crear proyecto</button>
-    </EditForm>
+            <EditForm Model="newProject" FormName="NewProjectForm" OnValidSubmit="HandleCreate">
+                <div class="row g-2">
+                    <div class="col-md-2">
+                        <InputSelect class="form-select" @bind-Value="newProject.ClientId">
+                            <option value="0">Selecciona un cliente</option>
+                            @foreach (var client in clients)
+                            {
+                                <option value="@client.Id">@client.Name</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-2">
+                        <InputText class="form-control" placeholder="Código" @bind-Value="newProject.Code" />
+                    </div>
+                    <div class="col-md-2">
+                        <InputText class="form-control" placeholder="Nombre" @bind-Value="newProject.Name" />
+                    </div>
+                    <div class="col-md-2">
+                        <InputText class="form-control" placeholder="Centro de costo (opcional)" @bind-Value="newProject.CostCenter" />
+                    </div>
+                    <div class="col-md-2">
+                        <InputSelect class="form-select" @bind-Value="newProject.BillingType">
+                            <option value="@BillingType.MonthlyRetainer">Retainer mensual</option>
+                            <option value="@BillingType.PerTicket">Por ticket</option>
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-2">
+                        <InputTextArea class="form-control" placeholder="Config (JSON)" @bind-Value="newProject.Config" />
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-2">Crear proyecto</button>
+            </EditForm>
+        </Authorized>
+    </AuthorizeView>
 }
 
 @code {
@@ -157,7 +165,7 @@ else
             newProject = new ProjectCreateDto();
             await LoadProjectsAsync();
         }
-        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException)
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException or ForbiddenException)
         {
             errorMessage = ex.Message;
         }
@@ -194,7 +202,7 @@ else
             CancelEdit();
             await LoadProjectsAsync();
         }
-        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException)
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException or ForbiddenException)
         {
             errorMessage = ex.Message;
         }
@@ -208,7 +216,7 @@ else
             await ProjectService.DeleteAsync(id);
             await LoadProjectsAsync();
         }
-        catch (Exception ex) when (ex is ConflictException or NotFoundException)
+        catch (Exception ex) when (ex is ConflictException or NotFoundException or ForbiddenException)
         {
             errorMessage = ex.Message;
         }

@@ -54,6 +54,23 @@ namespace RodcastInvoiceApp.Web.Billing
                 });
             }
 
+            if (ticketInput.OvertimeHours > 0)
+            {
+                var overtimeRate = Math.Round(
+                    config.AdditionalHourRate * config.OvertimeMultiplier, 2, MidpointRounding.AwayFromZero);
+                var overtimeAmount = Math.Round(
+                    ticketInput.OvertimeHours * overtimeRate, 2, MidpointRounding.AwayFromZero);
+
+                items.Add(new InvoiceItemDraft
+                {
+                    Description = "Horas extra",
+                    Quantity = ticketInput.OvertimeHours,
+                    Unit = "hours",
+                    Rate = overtimeRate,
+                    Amount = overtimeAmount
+                });
+            }
+
             return items;
         }
 
@@ -70,6 +87,7 @@ namespace RodcastInvoiceApp.Web.Billing
         {
             public decimal AdditionalHourRate { get; set; }
             public int AdditionalTimeIncrementMinutes { get; set; } = 15;
+            public decimal OvertimeMultiplier { get; set; } = 1.5m;
         }
     }
 }

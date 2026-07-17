@@ -5,6 +5,7 @@ using RodcastInvoiceApp.Web.Data;
 using RodcastInvoiceApp.Web.DataTransferObjects.CompanySettings;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
 {
@@ -12,11 +13,14 @@ namespace RodcastInvoiceApp.Web.Services
     {
         private readonly AppDbContext _context;
         private readonly IValidator<CompanySettingsDto> _validator;
+        private readonly ICurrentUserAccessor _currentUser;
 
-        public CompanySettingsService(AppDbContext context, IValidator<CompanySettingsDto> validator)
+        public CompanySettingsService(
+            AppDbContext context, IValidator<CompanySettingsDto> validator, ICurrentUserAccessor currentUser)
         {
             _context = context;
             _validator = validator;
+            _currentUser = currentUser;
         }
 
         public async Task<CompanySettingsDto> GetAsync()
@@ -27,6 +31,8 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task<CompanySettingsDto> UpdateAsync(CompanySettingsDto dto)
         {
+            await _currentUser.EnsureAdminAsync();
+
             var result = await _validator.ValidateAsync(dto);
             if (!result.IsValid)
                 throw new BadRequestException(

@@ -1,11 +1,14 @@
 using FluentValidation;
 using Mapster;
 using MapsterMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RodcastInvoiceApp.Web.Billing;
 using RodcastInvoiceApp.Web.Components;
 using RodcastInvoiceApp.Web.Data;
+using RodcastInvoiceApp.Web.Data.Models;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Security;
 using RodcastInvoiceApp.Web.Services;
 using System.Reflection;
 
@@ -18,12 +21,47 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Login/Logout usan Razor Pages clasicas: necesitan escribir la cookie de
+// autenticacion en una respuesta HTTP normal, algo que no se puede hacer
+// dentro de un circuito interactivo de Blazor Server (SignalR).
+builder.Services.AddRazorPages();
+
 // Base de datos (MariaDB via Pomelo).
 // Version fija (no AutoDetect) para que "dotnet ef migrations add" funcione
 // sin necesitar una conexion real. Ajustar al version real de tu MariaDB en CloudPanel.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, new MariaDbServerVersion(new Version(10, 6, 0))));
+
+// ASP.NET Core Identity: cookie de autenticacion + roles (Admin / Employee).
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
+    {
+        // Reglas de password relajadas: app interna, 2 usuarios conocidos.
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequiredLength = 6;
+    })
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddSignInManager();
+
+builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
+    .AddCookie(IdentityConstants.ApplicationScheme, options =>
+    {
+        options.LoginPath = "/account/login";
+        options.AccessDeniedPath = "/account/login";
+    });
+
+// Todas las paginas requieren estar autenticado por defecto; las que sean
+// publicas (login) se marcan con [AllowAnonymous] explicitamente.
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
+builder.Services.AddCascadingAuthenticationState();
 
 // FluentValidation: registra todos los validadores del proyecto (busca clases AbstractValidator<T>).
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -35,6 +73,7 @@ builder.Services.AddSingleton(typeAdapterConfig);
 builder.Services.AddScoped<IMapper, ServiceMapper>();
 
 // Services
+builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IPriceRuleService, PriceRuleService>();
@@ -51,6 +90,17 @@ builder.Services.AddScoped<IBillingStrategy, PerTicketBillingStrategy>();
 
 var app = builder.Build();
 
+// Crea los roles Admin/Employee si no existen todavia (idempotente, no crea usuarios).
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    foreach (var role in new[] { AppRoles.Admin, AppRoles.Employee })
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole(role));
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -61,9 +111,15 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseAntiforgery();
 
-app.MapStaticAssets();
+// CSS/JS/imagenes deben cargar siempre, incluso en la pagina de login
+// (que no es Blazor y no tiene por que estar detras del FallbackPolicy).
+app.MapStaticAssets().AllowAnonymous();
+app.MapRazorPages();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

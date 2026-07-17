@@ -17,15 +17,28 @@
 }
 else
 {
-    <div class="mb-3" style="max-width: 300px;">
-        <label class="form-label">Filtrar por proyecto</label>
-        <select class="form-select" @bind="selectedProjectId" @bind:after="LoadInvoicesAsync">
-            <option value="0">Todos los proyectos</option>
-            @foreach (var project in projects)
-            {
-                <option value="@project.Id">@project.ClientName - @project.Name</option>
-            }
-        </select>
+    <div class="row g-2 mb-3">
+        <div class="col-md-3">
+            <label class="form-label">Filtrar por proyecto</label>
+            <select class="form-select" @bind="selectedProjectId" @bind:after="LoadInvoicesAsync">
+                <option value="0">Todos los proyectos</option>
+                @foreach (var project in projects)
+                {
+                    <option value="@project.Id">@project.ClientName - @project.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Desde</label>
+            <input type="date" class="form-control" @bind="fromDate" @bind:after="LoadInvoicesAsync" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Hasta</label>
+            <input type="date" class="form-control" @bind="toDate" @bind:after="LoadInvoicesAsync" />
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-outline-secondary" @onclick="ClearFilters">Limpiar filtros</button>
+        </div>
     </div>
 
     <table class="table">
@@ -67,6 +80,8 @@ else
     private List<ProjectResponseDto>? projects;
     private List<InvoiceResponseDto>? invoices;
     private int selectedProjectId;
+    private DateTime? fromDate;
+    private DateTime? toDate;
 
     protected override async Task OnInitializedAsync()
     {
@@ -76,7 +91,15 @@ else
 
     private async Task LoadInvoicesAsync()
     {
-        var filter = selectedProjectId == 0 ? null : (int?)selectedProjectId;
-        invoices = (await InvoiceService.GetAllAsync(filter)).ToList();
+        var projectFilter = selectedProjectId == 0 ? null : (int?)selectedProjectId;
+        invoices = (await InvoiceService.GetAllAsync(projectFilter, fromDate: fromDate, toDate: toDate)).ToList();
+    }
+
+    private async Task ClearFilters()
+    {
+        selectedProjectId = 0;
+        fromDate = null;
+        toDate = null;
+        await LoadInvoicesAsync();
     }
 }

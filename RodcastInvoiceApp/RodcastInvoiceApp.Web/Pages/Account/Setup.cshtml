@@ -1,0 +1,50 @@
+@page "/account/setup"
+@model RodcastInvoiceApp.Web.Pages.Account.SetupModel
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Configuración inicial - Rodcast Invoicing</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/app.css" />
+</head>
+<body>
+    <div class="container" style="max-width: 400px; margin-top: 10vh;">
+        <h1 class="mb-4 text-center h3">Configuración inicial</h1>
+
+        @if (Model.AlreadyInitialized)
+        {
+            <div class="alert alert-info">
+                Ya existe al menos un usuario. Esta página solo funciona una vez, para crear
+                el primer administrador. <a href="/account/login">Ir a iniciar sesión</a>.
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No hay usuarios todavía. Creá la cuenta de administrador inicial.</p>
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger">@Model.ErrorMessage</div>
+            }
+
+            <form method="post">
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input asp-for="DisplayName" class="form-control" required autofocus />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input asp-for="Email" class="form-control" type="email" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Contraseña (mínimo 6 caracteres)</label>
+                    <input asp-for="Password" class="form-control" type="password" required minlength="6" />
+                </div>
+                <button class="btn btn-primary w-100" type="submit">Crear administrador</button>
+            </form>
+        }
+    </div>
+</body>
+</html>

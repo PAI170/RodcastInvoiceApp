@@ -1,0 +1,167 @@
+@page "/users"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using Microsoft.AspNetCore.Identity
+@using RodcastInvoiceApp.Web.Data.Models
+@inject UserManager<ApplicationUser> UserManager
+
+<PageTitle>Usuarios</PageTitle>
+
+<h1>Usuarios</h1>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (users is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in users)
+            {
+                <tr>
+                    <td>@u.DisplayName</td>
+                    <td>@u.Email</td>
+                    <td>@u.Role</td>
+                    <td>
+                        @if (u.Id != currentUserId)
+                        {
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(u.Id)">Eliminar</button>
+                        }
+                        else
+                        {
+                            <span class="text-muted">(vos)</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h2>Nuevo usuario</h2>
+
+<EditForm Model="newUser" FormName="NewUserForm" OnValidSubmit="HandleCreate">
+    <div class="row g-2">
+        <div class="col-md-3">
+            <InputText class="form-control" placeholder="Nombre" @bind-Value="newUser.DisplayName" />
+        </div>
+        <div class="col-md-3">
+            <InputText class="form-control" placeholder="Email" @bind-Value="newUser.Email" />
+        </div>
+        <div class="col-md-3">
+            <InputText class="form-control" placeholder="Contraseña (mínimo 6 caracteres)" type="password" @bind-Value="newUser.Password" />
+        </div>
+        <div class="col-md-2">
+            <InputSelect class="form-select" @bind-Value="newUser.Role">
+                <option value="@AppRoles.Admin">Admin</option>
+                <option value="@AppRoles.Employee">Employee</option>
+            </InputSelect>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Crear usuario</button>
+</EditForm>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private List<UserRow>? users;
+    private NewUserModel newUser = new();
+    private string? errorMessage;
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask is not null)
+        {
+            var authState = await AuthStateTask;
+            currentUserId = UserManager.GetUserId(authState.User);
+        }
+
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        var list = new List<UserRow>();
+        foreach (var user in UserManager.Users.ToList())
+        {
+            var roles = await UserManager.GetRolesAsync(user);
+            list.Add(new UserRow
+            {
+                Id = user.Id,
+                DisplayName = user.DisplayName,
+                Email = user.Email ?? string.Empty,
+                Role = roles.FirstOrDefault() ?? "(sin rol)"
+            });
+        }
+
+        users = list;
+    }
+
+    private async Task HandleCreate()
+    {
+        errorMessage = null;
+
+        var user = new ApplicationUser
+        {
+            UserName = newUser.Email,
+            Email = newUser.Email,
+            DisplayName = newUser.DisplayName
+        };
+
+        var result = await UserManager.CreateAsync(user, newUser.Password);
+        if (!result.Succeeded)
+        {
+            errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+            return;
+        }
+
+        await UserManager.AddToRoleAsync(user, newUser.Role);
+        newUser = new NewUserModel();
+        await LoadUsersAsync();
+    }
+
+    private async Task HandleDelete(string id)
+    {
+        if (id == currentUserId)
+            return;
+
+        errorMessage = null;
+        var user = await UserManager.FindByIdAsync(id);
+        if (user is null)
+            return;
+
+        await UserManager.DeleteAsync(user);
+        await LoadUsersAsync();
+    }
+
+    private class UserRow
+    {
+        public string Id { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+    }
+
+    private class NewUserModel
+    {
+        public string DisplayName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string Role { get; set; } = AppRoles.Employee;
+    }
+}

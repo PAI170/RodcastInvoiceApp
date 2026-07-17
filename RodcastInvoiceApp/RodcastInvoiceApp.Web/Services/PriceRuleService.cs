@@ -5,6 +5,7 @@ using RodcastInvoiceApp.Web.Data;
 using RodcastInvoiceApp.Web.DataTransferObjects.PriceRule;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
 {
@@ -13,15 +14,18 @@ namespace RodcastInvoiceApp.Web.Services
         private readonly AppDbContext _context;
         private readonly IValidator<PriceRuleCreateDto> _createValidator;
         private readonly IValidator<PriceRuleUpdateDto> _updateValidator;
+        private readonly ICurrentUserAccessor _currentUser;
 
         public PriceRuleService(
             AppDbContext context,
             IValidator<PriceRuleCreateDto> createValidator,
-            IValidator<PriceRuleUpdateDto> updateValidator)
+            IValidator<PriceRuleUpdateDto> updateValidator,
+            ICurrentUserAccessor currentUser)
         {
             _context = context;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _currentUser = currentUser;
         }
 
         public async Task<IEnumerable<PriceRuleResponseDto>> GetAllAsync(int projectId)
@@ -35,6 +39,7 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task<PriceRuleResponseDto> CreateAsync(PriceRuleCreateDto dto)
         {
+            await _currentUser.EnsureAdminAsync();
             await ValidateAsync(_createValidator, dto);
 
             var projectExists = await _context.Projects.AnyAsync(p => p.Id == dto.ProjectId);
@@ -51,6 +56,7 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task<PriceRuleResponseDto> UpdateAsync(int id, PriceRuleUpdateDto dto)
         {
+            await _currentUser.EnsureAdminAsync();
             await ValidateAsync(_updateValidator, dto);
 
             var priceRule = await _context.PriceRules
@@ -65,6 +71,8 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task DeleteAsync(int id)
         {
+            await _currentUser.EnsureAdminAsync();
+
             var priceRule = await _context.PriceRules
                 .FirstOrDefaultAsync(pr => pr.Id == id)
                 ?? throw new NotFoundException("Tarifa no encontrada.");

@@ -6,7 +6,8 @@ namespace RodcastInvoiceApp.Web.Interfaces
 {
     public interface IInvoiceService
     {
-        Task<IEnumerable<InvoiceResponseDto>> GetAllAsync(int? projectId = null, int? take = null);
+        Task<IEnumerable<InvoiceResponseDto>> GetAllAsync(
+            int? projectId = null, int? take = null, DateTime? fromDate = null, DateTime? toDate = null);
         Task<InvoiceResponseDto> GetByIdAsync(int id);
         Task<InvoiceResponseDto> CreateAsync(InvoiceCreateDto dto);
         Task<InvoiceResponseDto> UpdateAsync(int id, InvoiceCreateDto dto);

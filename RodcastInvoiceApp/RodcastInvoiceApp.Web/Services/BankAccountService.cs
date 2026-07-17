@@ -5,6 +5,7 @@ using RodcastInvoiceApp.Web.Data;
 using RodcastInvoiceApp.Web.DataTransferObjects.BankAccount;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
 {
@@ -13,15 +14,18 @@ namespace RodcastInvoiceApp.Web.Services
         private readonly AppDbContext _context;
         private readonly IValidator<BankAccountCreateDto> _createValidator;
         private readonly IValidator<BankAccountUpdateDto> _updateValidator;
+        private readonly ICurrentUserAccessor _currentUser;
 
         public BankAccountService(
             AppDbContext context,
             IValidator<BankAccountCreateDto> createValidator,
-            IValidator<BankAccountUpdateDto> updateValidator)
+            IValidator<BankAccountUpdateDto> updateValidator,
+            ICurrentUserAccessor currentUser)
         {
             _context = context;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _currentUser = currentUser;
         }
 
         public async Task<IEnumerable<BankAccountResponseDto>> GetAllAsync()
@@ -44,6 +48,7 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task<BankAccountResponseDto> CreateAsync(BankAccountCreateDto dto)
         {
+            await _currentUser.EnsureAdminAsync();
             await ValidateAsync(_createValidator, dto);
 
             var bankAccount = dto.Adapt<Data.Models.BankAccount>();
@@ -56,6 +61,7 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task<BankAccountResponseDto> UpdateAsync(int id, BankAccountUpdateDto dto)
         {
+            await _currentUser.EnsureAdminAsync();
             await ValidateAsync(_updateValidator, dto);
 
             var bankAccount = await _context.BankAccounts
@@ -70,6 +76,8 @@ namespace RodcastInvoiceApp.Web.Services
 
         public async Task DeleteAsync(int id)
         {
+            await _currentUser.EnsureAdminAsync();
+
             var bankAccount = await _context.BankAccounts
                 .FirstOrDefaultAsync(b => b.Id == id)
                 ?? throw new NotFoundException("Cuenta bancaria no encontrada.");
