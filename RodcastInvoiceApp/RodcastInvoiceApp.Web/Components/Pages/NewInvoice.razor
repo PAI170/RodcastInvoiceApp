@@ -1,0 +1,297 @@
+@page "/invoices/new"
+@page "/invoices/{InvoiceId:int}/edit"
+@using RodcastInvoiceApp.Web.Data.Models
+@using RodcastInvoiceApp.Web.DataTransferObjects.BankAccount
+@using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
+@using RodcastInvoiceApp.Web.DataTransferObjects.PriceRule
+@using RodcastInvoiceApp.Web.DataTransferObjects.Project
+@using RodcastInvoiceApp.Web.Exceptions
+@using RodcastInvoiceApp.Web.Interfaces
+@inject IInvoiceService InvoiceService
+@inject IProjectService ProjectService
+@inject IBankAccountService BankAccountService
+@inject IPriceRuleService PriceRuleService
+@inject NavigationManager NavigationManager
+
+<PageTitle>@(InvoiceId.HasValue ? "Editar Factura" : "Nueva Factura")</PageTitle>
+
+<h1>@(InvoiceId.HasValue ? "Editar Factura" : "Nueva Factura")</h1>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (createdInvoice is not null)
+{
+    <div class="alert alert-success">
+        <p>Factura <strong>@createdInvoice.InvoiceNumber</strong> creada para @createdInvoice.ClientName / @createdInvoice.ProjectName.</p>
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Descripción</th>
+                    <th>Cantidad</th>
+                    <th>Unidad</th>
+                    <th>Tarifa</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in createdInvoice.Items)
+                {
+                    <tr>
+                        <td>@item.Description</td>
+                        <td>@item.Quantity</td>
+                        <td>@item.Unit</td>
+                        <td>@item.Rate.ToString("0.00")</td>
+                        <td>@item.Amount.ToString("0.00")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p>
+            Subtotal: @createdInvoice.Subtotal.ToString("0.00") @createdInvoice.Currency<br />
+            IVA (@createdInvoice.VatPercent%): @createdInvoice.VatAmount.ToString("0.00") @createdInvoice.Currency<br />
+            <strong>Total: @createdInvoice.Total.ToString("0.00") @createdInvoice.Currency</strong>
+        </p>
+        <a class="btn btn-outline-primary btn-sm" href="/invoices">Ver todas las facturas</a>
+    </div>
+}
+
+@if (projects is null || bankAccounts is null || isLoadingInvoice)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    @if (InvoiceId.HasValue)
+    {
+        <p class="text-muted">
+            No se puede cambiar el proyecto de una factura ya creada. Si el proyecto está mal,
+            borra esta factura (si no tiene pagos registrados) y crea una nueva.
+        </p>
+    }
+
+    <EditForm Model="dto" FormName="InvoiceForm" OnValidSubmit="HandleSubmit">
+        <div class="row g-2">
+            <div class="col-md-3">
+                <label class="form-label">Proyecto</label>
+                <InputSelect class="form-select" @bind-Value="dto.ProjectId" @bind-Value:after="OnProjectChanged" disabled="@InvoiceId.HasValue">
+                    <option value="0">Selecciona un proyecto</option>
+                    @foreach (var project in projects)
+                    {
+                        <option value="@project.Id">@project.ClientName - @project.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Cuenta bancaria</label>
+                <InputSelect class="form-select" @bind-Value="dto.BankAccountId">
+                    <option value="0">Selecciona una cuenta</option>
+                    @foreach (var account in bankAccounts)
+                    {
+                        <option value="@account.Id">@account.BankName (@account.Currency)</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">No. Factura</label>
+                <InputText class="form-control" @bind-Value="dto.InvoiceNumber" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Fecha factura</label>
+                <InputDate class="form-control" @bind-Value="dto.InvoiceDate" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Fecha vencimiento</label>
+                <InputDate class="form-control" @bind-Value="dto.DueDate" />
+            </div>
+        </div>
+
+        <div class="row g-2 mt-1">
+            <div class="col-md-2">
+                <label class="form-label">Moneda</label>
+                <InputText class="form-control" @bind-Value="dto.Currency" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">% IVA</label>
+                <InputNumber class="form-control" step="0.01" @bind-Value="dto.VatPercent" />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="form-check">
+                    <InputCheckbox class="form-check-input" @bind-Value="dto.IsVatExonerated" />
+                    <label class="form-check-label">Exonerado de IVA</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Método de pago (opcional)</label>
+                <InputText class="form-control" @bind-Value="dto.PaymentMethod" />
+            </div>
+        </div>
+
+        @if (selectedProject is not null && selectedProject.BillingType == BillingType.MonthlyRetainer)
+        {
+            <h3 class="mt-4">Datos del mes (Retainer mensual)</h3>
+            <div class="row g-2">
+                <div class="col-md-2">
+                    <label class="form-label">Días de vacaciones</label>
+                    <InputNumber class="form-control" @bind-Value="dto.VacationDays" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Días trabajados</label>
+                    <InputNumber class="form-control" @bind-Value="dto.WorkedDays" disabled="@(dto.VacationDays == 0)" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Horas extra a facturar (mes anterior)</label>
+                    <InputNumber class="form-control" step="0.01" @bind-Value="dto.OvertimeHoursToInvoice" />
+                </div>
+            </div>
+            <p class="text-muted mt-1">
+                Si "Días de vacaciones" queda en 0, se factura el monto fijo del contrato.
+                Si es mayor a 0, se factura por horas realmente trabajadas.
+            </p>
+        }
+
+        @if (selectedProject is not null && selectedProject.BillingType == BillingType.PerTicket)
+        {
+            <h3 class="mt-4">Datos del ticket</h3>
+            <div class="row g-2">
+                <div class="col-md-2">
+                    <label class="form-label">No. de ticket</label>
+                    <InputText class="form-control" @bind-Value="dto.TicketNumber" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Ciudad</label>
+                    <InputSelect class="form-select" @bind-Value="dto.City">
+                        <option value="">Selecciona</option>
+                        @foreach (var city in AvailableCities)
+                        {
+                            <option value="@city">@city</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tipo de SLA</label>
+                    <InputSelect class="form-select" @bind-Value="dto.SlaType">
+                        <option value="">Selecciona</option>
+                        @foreach (var sla in AvailableSlaTypes)
+                        {
+                            <option value="@sla">@sla</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Minutos adicionales aprobados por el SDM</label>
+                    <InputNumber class="form-control" @bind-Value="dto.ApprovedAdditionalMinutes" />
+                </div>
+            </div>
+            <p class="text-muted mt-1">
+                Si el SDM no aprobó tiempo adicional, deja los minutos en 0.
+            </p>
+        }
+
+        <button type="submit" class="btn btn-primary mt-3" disabled="@(dto.ProjectId == 0)">
+            @(InvoiceId.HasValue ? "Guardar cambios" : "Crear factura")
+        </button>
+        <a class="btn btn-outline-secondary mt-3" href="@CancelUrl">Cancelar</a>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int? InvoiceId { get; set; }
+
+    private List<ProjectResponseDto>? projects;
+    private List<BankAccountResponseDto>? bankAccounts;
+    private ProjectResponseDto? selectedProject;
+    private List<PriceRuleResponseDto> priceRulesForProject = new();
+    private InvoiceCreateDto dto = new();
+    private InvoiceResponseDto? createdInvoice;
+    private string? errorMessage;
+    private bool isLoadingInvoice;
+
+    private string CancelUrl => InvoiceId.HasValue ? $"/invoices/{InvoiceId.Value}" : "/invoices";
+
+    private IEnumerable<string> AvailableCities =>
+        priceRulesForProject.Select(pr => pr.Dimension1).Distinct();
+
+    private IEnumerable<string> AvailableSlaTypes =>
+        priceRulesForProject
+            .Where(pr => pr.Dimension1 == dto.City)
+            .Select(pr => pr.Dimension2 ?? string.Empty)
+            .Distinct();
+
+    protected override async Task OnInitializedAsync()
+    {
+        projects = (await ProjectService.GetAllAsync()).ToList();
+        bankAccounts = (await BankAccountService.GetAllAsync()).ToList();
+
+        if (InvoiceId.HasValue)
+        {
+            isLoadingInvoice = true;
+            var invoice = await InvoiceService.GetByIdAsync(InvoiceId.Value);
+            selectedProject = projects.FirstOrDefault(p => p.Id == invoice.ProjectId);
+
+            dto = new InvoiceCreateDto
+            {
+                ProjectId = invoice.ProjectId,
+                BankAccountId = invoice.BankAccountId,
+                InvoiceNumber = invoice.InvoiceNumber,
+                InvoiceDate = invoice.InvoiceDate,
+                DueDate = invoice.DueDate,
+                Currency = invoice.Currency,
+                VatPercent = invoice.VatPercent,
+                IsVatExonerated = invoice.IsVatExonerated,
+                PaymentMethod = invoice.PaymentMethod,
+                VacationDays = invoice.VacationDays,
+                WorkedDays = invoice.WorkedDays,
+                OvertimeHoursToInvoice = invoice.OvertimeHoursToInvoice,
+                TicketNumber = invoice.TicketNumber,
+                City = invoice.City,
+                SlaType = invoice.SlaType,
+                ApprovedAdditionalMinutes = invoice.AdditionalMinutes ?? 0
+            };
+
+            if (selectedProject is not null && selectedProject.BillingType == BillingType.PerTicket)
+            {
+                priceRulesForProject = (await PriceRuleService.GetAllAsync(invoice.ProjectId)).ToList();
+            }
+
+            isLoadingInvoice = false;
+        }
+    }
+
+    private async Task OnProjectChanged()
+    {
+        selectedProject = projects!.FirstOrDefault(p => p.Id == dto.ProjectId);
+        priceRulesForProject.Clear();
+        dto.City = null;
+        dto.SlaType = null;
+
+        if (selectedProject is not null && selectedProject.BillingType == BillingType.PerTicket)
+        {
+            priceRulesForProject = (await PriceRuleService.GetAllAsync(dto.ProjectId)).ToList();
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+        try
+        {
+            if (InvoiceId.HasValue)
+            {
+                await InvoiceService.UpdateAsync(InvoiceId.Value, dto);
+                NavigationManager.NavigateTo($"/invoices/{InvoiceId.Value}");
+            }
+            else
+            {
+                createdInvoice = await InvoiceService.CreateAsync(dto);
+            }
+        }
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

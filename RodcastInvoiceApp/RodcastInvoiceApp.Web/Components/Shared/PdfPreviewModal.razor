@@ -1,0 +1,31 @@
+@if (IsVisible)
+{
+    <div class="pdf-modal-backdrop" @onclick="Close">
+        <div class="pdf-modal-content" @onclick:stopPropagation="true">
+            <div class="pdf-modal-header">
+                <strong>@Title</strong>
+                <button type="button" class="btn-close" aria-label="Cerrar" @onclick="Close"></button>
+            </div>
+            @if (!string.IsNullOrEmpty(PdfUrl))
+            {
+                <iframe src="@PdfUrl" class="pdf-modal-frame" title="@Title"></iframe>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public string? PdfUrl { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "Vista previa";
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private async Task Close() => await OnClose.InvokeAsync();
+}

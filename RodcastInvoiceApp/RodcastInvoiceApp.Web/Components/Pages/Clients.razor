@@ -1,0 +1,183 @@
+@page "/clients"
+@using RodcastInvoiceApp.Web.DataTransferObjects.Client
+@using RodcastInvoiceApp.Web.Exceptions
+@using RodcastInvoiceApp.Web.Interfaces
+@inject IClientService ClientService
+
+<PageTitle>Clientes</PageTitle>
+
+<h1>Clientes</h1>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (clients is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th>VAT ID</th>
+                <th>País</th>
+                <th>Moneda</th>
+                <th>ID de proveedor</th>
+                <th>Proyectos</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var client in clients)
+            {
+                if (editingId == client.Id && editingDto is not null)
+                {
+                    <tr>
+                        <td><input class="form-control" @bind="editingDto.Name" /></td>
+                        <td><input class="form-control" @bind="editingDto.Address" /></td>
+                        <td><input class="form-control" @bind="editingDto.VatId" /></td>
+                        <td><input class="form-control" @bind="editingDto.Country" /></td>
+                        <td><input class="form-control" @bind="editingDto.DefaultCurrency" /></td>
+                        <td><input class="form-control" @bind="editingDto.SupplierIdAssigned" /></td>
+                        <td>@client.ProjectCount</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" @onclick="HandleUpdate">Guardar</button>
+                            <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancelar</button>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td>@client.Name</td>
+                        <td>@client.Address</td>
+                        <td>@client.VatId</td>
+                        <td>@client.Country</td>
+                        <td>@client.DefaultCurrency</td>
+                        <td>@client.SupplierIdAssigned</td>
+                        <td>@client.ProjectCount</td>
+                        <td>
+                            <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(client)">Editar</button>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(client.Id)">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+<h2>Nuevo cliente</h2>
+
+<EditForm Model="newClient" FormName="NewClientForm" OnValidSubmit="HandleCreate">
+    <div class="row g-2">
+        <div class="col-md-3">
+            <InputText class="form-control" placeholder="Nombre" @bind-Value="newClient.Name" />
+        </div>
+        <div class="col-md-3">
+            <InputText class="form-control" placeholder="Dirección" @bind-Value="newClient.Address" />
+        </div>
+        <div class="col-md-2">
+            <InputText class="form-control" placeholder="VAT ID" @bind-Value="newClient.VatId" />
+        </div>
+        <div class="col-md-2">
+            <InputText class="form-control" placeholder="País" @bind-Value="newClient.Country" />
+        </div>
+        <div class="col-md-2">
+            <InputText class="form-control" placeholder="Moneda" @bind-Value="newClient.DefaultCurrency" />
+        </div>
+        <div class="col-md-3">
+            <InputText class="form-control" placeholder="ID de proveedor asignado (opcional)" @bind-Value="newClient.SupplierIdAssigned" />
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Crear cliente</button>
+</EditForm>
+
+@code {
+    private List<ClientResponseDto>? clients;
+    private ClientCreateDto newClient = new();
+    private int? editingId;
+    private ClientUpdateDto? editingDto;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadClientsAsync();
+    }
+
+    private async Task LoadClientsAsync()
+    {
+        clients = (await ClientService.GetAllAsync()).ToList();
+    }
+
+    private async Task HandleCreate()
+    {
+        errorMessage = null;
+        try
+        {
+            await ClientService.CreateAsync(newClient);
+            newClient = new ClientCreateDto();
+            await LoadClientsAsync();
+        }
+        catch (Exception ex) when (ex is BadRequestException or ConflictException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void StartEdit(ClientResponseDto client)
+    {
+        editingId = client.Id;
+        editingDto = new ClientUpdateDto
+        {
+            Name = client.Name,
+            Address = client.Address,
+            Country = client.Country,
+            VatId = client.VatId,
+            SupplierIdAssigned = client.SupplierIdAssigned,
+            DefaultCurrency = client.DefaultCurrency
+        };
+    }
+
+    private void CancelEdit()
+    {
+        editingId = null;
+        editingDto = null;
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (editingId is null || editingDto is null) return;
+
+        errorMessage = null;
+        try
+        {
+            await ClientService.UpdateAsync(editingId.Value, editingDto);
+            CancelEdit();
+            await LoadClientsAsync();
+        }
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleDelete(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await ClientService.DeleteAsync(id);
+            await LoadClientsAsync();
+        }
+        catch (Exception ex) when (ex is ConflictException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

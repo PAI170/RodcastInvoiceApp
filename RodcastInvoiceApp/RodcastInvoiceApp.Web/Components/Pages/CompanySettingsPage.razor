@@ -1,0 +1,80 @@
+@page "/company-settings"
+@using RodcastInvoiceApp.Web.DataTransferObjects.CompanySettings
+@using RodcastInvoiceApp.Web.Exceptions
+@using RodcastInvoiceApp.Web.Interfaces
+@inject ICompanySettingsService CompanySettingsService
+
+<PageTitle>Datos de la Empresa</PageTitle>
+
+<h1>Datos de la Empresa</h1>
+
+<p class="text-muted">Estos datos se usan para generar el PDF de las facturas (nombre, dirección, Tax ID, logo, firma).</p>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (successMessage is not null)
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (settings is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <EditForm Model="settings" FormName="CompanySettingsForm" OnValidSubmit="HandleSave">
+        <div class="row g-2" style="max-width: 700px;">
+            <div class="col-md-12">
+                <label class="form-label">Nombre</label>
+                <InputText class="form-control" @bind-Value="settings.Name" />
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">Dirección</label>
+                <InputText class="form-control" @bind-Value="settings.Address" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Tax ID</label>
+                <InputText class="form-control" @bind-Value="settings.TaxId" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Ruta del logo (opcional)</label>
+                <InputText class="form-control" @bind-Value="settings.LogoPath" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Ruta de la firma (opcional)</label>
+                <InputText class="form-control" @bind-Value="settings.SignaturePath" />
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Guardar</button>
+    </EditForm>
+}
+
+@code {
+    private CompanySettingsDto? settings;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        settings = await CompanySettingsService.GetAsync();
+    }
+
+    private async Task HandleSave()
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            settings = await CompanySettingsService.UpdateAsync(settings!);
+            successMessage = "Datos guardados.";
+        }
+        catch (BadRequestException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

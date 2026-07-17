@@ -1,0 +1,105 @@
+@page "/"
+@using RodcastInvoiceApp.Web.DataTransferObjects.Client
+@using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
+@using RodcastInvoiceApp.Web.Interfaces
+@inject IClientService ClientService
+@inject IInvoiceService InvoiceService
+
+<PageTitle>Sistema de Facturación</PageTitle>
+
+<h1 class="mb-5">Sistema de Facturación</h1>
+
+<div class="mb-5">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>Clientes</h2>
+        <a class="btn btn-outline-primary btn-sm" href="/clients">Ver todos</a>
+    </div>
+
+    @if (recentClients is null)
+    {
+        <p><em>Cargando...</em></p>
+    }
+    else if (recentClients.Count == 0)
+    {
+        <p class="text-muted">Todavía no hay clientes registrados.</p>
+    }
+    else
+    {
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>País</th>
+                    <th>Proyectos</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var client in recentClients)
+                {
+                    <tr>
+                        <td>@client.Name</td>
+                        <td>@client.Country</td>
+                        <td>@client.ProjectCount</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<div>
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>Últimas facturas</h2>
+        <a class="btn btn-outline-primary btn-sm" href="/invoices">Ver todas</a>
+    </div>
+
+    @if (recentInvoices is null)
+    {
+        <p><em>Cargando...</em></p>
+    }
+    else if (recentInvoices.Count == 0)
+    {
+        <p class="text-muted">Todavía no hay facturas creadas.</p>
+    }
+    else
+    {
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>No.</th>
+                    <th>Cliente / Proyecto</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var invoice in recentInvoices)
+                {
+                    <tr>
+                        <td>@invoice.InvoiceNumber</td>
+                        <td>@invoice.ClientName / @invoice.ProjectName</td>
+                        <td>@invoice.InvoiceDate.ToString("yyyy-MM-dd")</td>
+                        <td>@invoice.Status</td>
+                        <td>@invoice.Total.ToString("0.00") @invoice.Currency</td>
+                        <td><a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}")">Ver</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private const int MaxItemsToShow = 10;
+
+    private List<ClientResponseDto>? recentClients;
+    private List<InvoiceResponseDto>? recentInvoices;
+
+    protected override async Task OnInitializedAsync()
+    {
+        recentClients = (await ClientService.GetAllAsync(take: 5)).ToList();
+        recentInvoices = (await InvoiceService.GetAllAsync(take: MaxItemsToShow)).ToList();
+    }
+}

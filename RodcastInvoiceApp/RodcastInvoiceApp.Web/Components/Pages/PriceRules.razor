@@ -1,0 +1,174 @@
+@page "/projects/{ProjectId:int}/price-rules"
+@using RodcastInvoiceApp.Web.DataTransferObjects.PriceRule
+@using RodcastInvoiceApp.Web.Exceptions
+@using RodcastInvoiceApp.Web.Interfaces
+@inject IPriceRuleService PriceRuleService
+@inject IProjectService ProjectService
+
+<PageTitle>Tarifas</PageTitle>
+
+<h1>Tarifas @(project is not null ? $"— {project.Name}" : "")</h1>
+<p><a href="/projects">← Volver a proyectos</a></p>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (priceRules is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Dimensión 1</th>
+                <th>Dimensión 2</th>
+                <th>Tarifa</th>
+                <th>Etiqueta</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var rule in priceRules)
+            {
+                if (editingId == rule.Id && editingDto is not null)
+                {
+                    <tr>
+                        <td><input class="form-control" @bind="editingDto.Dimension1" /></td>
+                        <td><input class="form-control" @bind="editingDto.Dimension2" /></td>
+                        <td><input class="form-control" type="number" step="0.01" @bind="editingDto.Rate" /></td>
+                        <td><input class="form-control" @bind="editingDto.Label" /></td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" @onclick="HandleUpdate">Guardar</button>
+                            <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancelar</button>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td>@rule.Dimension1</td>
+                        <td>@rule.Dimension2</td>
+                        <td>@rule.Rate.ToString("0.00")</td>
+                        <td>@rule.Label</td>
+                        <td>
+                            <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(rule)">Editar</button>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(rule.Id)">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <h2>Nueva tarifa</h2>
+
+    <EditForm Model="newPriceRule" FormName="NewPriceRuleForm" OnValidSubmit="HandleCreate">
+        <div class="row g-2">
+            <div class="col-md-3">
+                <InputText class="form-control" placeholder="Dimensión 1 (ej. ciudad)" @bind-Value="newPriceRule.Dimension1" />
+            </div>
+            <div class="col-md-3">
+                <InputText class="form-control" placeholder="Dimensión 2 (opcional, ej. SLA)" @bind-Value="newPriceRule.Dimension2" />
+            </div>
+            <div class="col-md-2">
+                <InputNumber class="form-control" step="0.01" placeholder="Tarifa" @bind-Value="newPriceRule.Rate" />
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" placeholder="Etiqueta (opcional)" @bind-Value="newPriceRule.Label" />
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Crear tarifa</button>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int ProjectId { get; set; }
+
+    private DataTransferObjects.Project.ProjectResponseDto? project;
+    private List<PriceRuleResponseDto>? priceRules;
+    private PriceRuleCreateDto newPriceRule = new();
+    private int? editingId;
+    private PriceRuleUpdateDto? editingDto;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        project = await ProjectService.GetByIdAsync(ProjectId);
+        newPriceRule.ProjectId = ProjectId;
+        await LoadPriceRulesAsync();
+    }
+
+    private async Task LoadPriceRulesAsync()
+    {
+        priceRules = (await PriceRuleService.GetAllAsync(ProjectId)).ToList();
+    }
+
+    private async Task HandleCreate()
+    {
+        errorMessage = null;
+        try
+        {
+            await PriceRuleService.CreateAsync(newPriceRule);
+            newPriceRule = new PriceRuleCreateDto { ProjectId = ProjectId };
+            await LoadPriceRulesAsync();
+        }
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void StartEdit(PriceRuleResponseDto rule)
+    {
+        editingId = rule.Id;
+        editingDto = new PriceRuleUpdateDto
+        {
+            Dimension1 = rule.Dimension1,
+            Dimension2 = rule.Dimension2,
+            Rate = rule.Rate,
+            Label = rule.Label
+        };
+    }
+
+    private void CancelEdit()
+    {
+        editingId = null;
+        editingDto = null;
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (editingId is null || editingDto is null) return;
+
+        errorMessage = null;
+        try
+        {
+            await PriceRuleService.UpdateAsync(editingId.Value, editingDto);
+            CancelEdit();
+            await LoadPriceRulesAsync();
+        }
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleDelete(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await PriceRuleService.DeleteAsync(id);
+            await LoadPriceRulesAsync();
+        }
+        catch (Exception ex) when (ex is NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

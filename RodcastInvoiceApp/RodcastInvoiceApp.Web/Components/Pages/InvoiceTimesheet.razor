@@ -1,0 +1,165 @@
+@page "/invoices/{InvoiceId:int}/timesheet"
+@using RodcastInvoiceApp.Web.DataTransferObjects.Timesheet
+@using RodcastInvoiceApp.Web.Exceptions
+@using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Timesheet
+@inject ITimesheetService TimesheetService
+
+<PageTitle>Timesheet</PageTitle>
+
+<p><a href="@($"/invoices/{InvoiceId}")">← Volver a la factura</a></p>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (successMessage is not null)
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (timesheet is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <h1>Timesheet - @MonthNames[timesheet.Month - 1] @timesheet.Year</h1>
+    <p class="text-muted">@timesheet.ProjectName</p>
+
+    <table class="table table-bordered text-center" style="table-layout: fixed;">
+        <thead>
+            <tr>
+                <th>Sun</th>
+                <th>Mon</th>
+                <th>Tue</th>
+                <th>Wed</th>
+                <th>Thu</th>
+                <th>Fri</th>
+                <th>Sat</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var week in timesheet.Weeks)
+            {
+                <tr>
+                    @foreach (var cell in week)
+                    {
+                        @if (cell.IsColorable)
+                        {
+                            <td style="background-color: @TimesheetColors.GetHex(GetCategory(cell.Day)); vertical-align: top;">
+                                <div class="fw-bold">@cell.Day</div>
+                                <select class="form-select form-select-sm mt-1"
+                                        @bind:get="GetCategoryValue(cell.Day)"
+                                        @bind:set="(string? value) => SetCategoryValue(cell.Day, value)">
+                                    <option value="">Present</option>
+                                    @foreach (var category in AllCategories)
+                                    {
+                                        <option value="@category">@TimesheetColors.GetLabel(category)</option>
+                                    }
+                                </select>
+                            </td>
+                        }
+                        else
+                        {
+                            <td style="background-color: #2E2E2E; color: #888;">
+                                @(cell.IsCurrentMonth ? cell.Day.ToString() : "")
+                            </td>
+                        }
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h3>Leyenda</h3>
+    <div class="d-flex flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-2">
+            <div style="width:16px;height:16px;background-color:@TimesheetColors.Present;"></div> Present
+        </div>
+        @foreach (var category in AllCategories)
+        {
+            <div class="d-flex align-items-center gap-2">
+                <div style="width:16px;height:16px;background-color:@TimesheetColors.GetHex(category);"></div> @TimesheetColors.GetLabel(category)
+            </div>
+        }
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-primary" @onclick="HandleSave">Guardar</button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="ShowPreview">Ver Timesheet</button>
+        <a class="btn btn-outline-secondary" href="@($"/invoices/{InvoiceId}/timesheet-pdf?download=true")" target="_blank">Descargar Timesheet</a>
+    </div>
+}
+
+<PdfPreviewModal IsVisible="showPdfPreview" PdfUrl="@($"/invoices/{InvoiceId}/timesheet-pdf")" Title="Vista previa - Timesheet" OnClose="() => showPdfPreview = false" />
+
+@code {
+    [Parameter]
+    public int InvoiceId { get; set; }
+
+    private static readonly string[] MonthNames =
+    {
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    };
+
+    private static readonly TimesheetDayCategory[] AllCategories = Enum.GetValues<TimesheetDayCategory>();
+
+    private bool showPdfPreview;
+
+    private void ShowPreview() => showPdfPreview = true;
+
+    private TimesheetDto? timesheet;
+    private Dictionary<int, TimesheetDayCategory?> dayCategories = new();
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        timesheet = await TimesheetService.GetAsync(InvoiceId);
+        dayCategories = timesheet.Weeks
+            .SelectMany(w => w)
+            .Where(c => c.IsColorable)
+            .ToDictionary(c => c.Day, c => c.Category);
+    }
+
+    private TimesheetDayCategory? GetCategory(int day) =>
+        dayCategories.TryGetValue(day, out var category) ? category : null;
+
+    private string GetCategoryValue(int day) => GetCategory(day)?.ToString() ?? "";
+
+    private void SetCategoryValue(int day, string? value)
+    {
+        dayCategories[day] = string.IsNullOrEmpty(value) ? null : Enum.Parse<TimesheetDayCategory>(value);
+    }
+
+    private async Task HandleSave()
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            var dto = new TimesheetSaveDto
+            {
+                Exceptions = dayCategories
+                    .Where(kv => kv.Value is not null)
+                    .Select(kv => new TimesheetDayException { Day = kv.Key, Category = kv.Value!.Value })
+                    .ToList()
+            };
+
+            await TimesheetService.SaveAsync(InvoiceId, dto);
+            successMessage = "Timesheet guardado.";
+        }
+        catch (Exception ex) when (ex is BadRequestException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

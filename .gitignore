@@ -1,0 +1,24 @@
+# Build results
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider / VS Code
+.idea/
+.vscode/
+
+# NuGet
+*.nupkg
+**/packages/*
+
+# EF Core local tooling artifacts
+*.db
+*.db-shm
+*.db-wal
+
+# Claude Code worktrees (internal session management, not project source)
+.claude/worktrees/

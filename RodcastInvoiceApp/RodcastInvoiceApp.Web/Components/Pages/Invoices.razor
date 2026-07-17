@@ -1,0 +1,82 @@
+@page "/invoices"
+@using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
+@using RodcastInvoiceApp.Web.DataTransferObjects.Project
+@using RodcastInvoiceApp.Web.Exceptions
+@using RodcastInvoiceApp.Web.Interfaces
+@inject IInvoiceService InvoiceService
+@inject IProjectService ProjectService
+
+<PageTitle>Facturas</PageTitle>
+
+<h1>Facturas</h1>
+<p><a class="btn btn-primary btn-sm" href="/invoices/new">+ Nueva factura</a></p>
+
+@if (projects is null || invoices is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <div class="mb-3" style="max-width: 300px;">
+        <label class="form-label">Filtrar por proyecto</label>
+        <select class="form-select" @bind="selectedProjectId" @bind:after="LoadInvoicesAsync">
+            <option value="0">Todos los proyectos</option>
+            @foreach (var project in projects)
+            {
+                <option value="@project.Id">@project.ClientName - @project.Name</option>
+            }
+        </select>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>No. Factura</th>
+                <th>Cliente / Proyecto</th>
+                <th>Fecha</th>
+                <th>Vencimiento</th>
+                <th>Estado</th>
+                <th>Total</th>
+                <th>Pagado</th>
+                <th>Saldo</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var invoice in invoices)
+            {
+                <tr>
+                    <td>@invoice.InvoiceNumber</td>
+                    <td>@invoice.ClientName / @invoice.ProjectName</td>
+                    <td>@invoice.InvoiceDate.ToString("yyyy-MM-dd")</td>
+                    <td>@invoice.DueDate.ToString("yyyy-MM-dd")</td>
+                    <td>@invoice.Status</td>
+                    <td>@invoice.Total.ToString("0.00") @invoice.Currency</td>
+                    <td>@invoice.AmountPaid.ToString("0.00")</td>
+                    <td>@invoice.Balance.ToString("0.00")</td>
+                    <td>
+                        <a class="btn btn-outline-primary btn-sm" href="@($"/invoices/{invoice.Id}")">Ver</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ProjectResponseDto>? projects;
+    private List<InvoiceResponseDto>? invoices;
+    private int selectedProjectId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        projects = (await ProjectService.GetAllAsync()).ToList();
+        await LoadInvoicesAsync();
+    }
+
+    private async Task LoadInvoicesAsync()
+    {
+        var filter = selectedProjectId == 0 ? null : (int?)selectedProjectId;
+        invoices = (await InvoiceService.GetAllAsync(filter)).ToList();
+    }
+}

@@ -1,0 +1,51 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center gap-2" href="">
+            <img src="images/rodcast-logo.png" alt="Rodcast Solutions" style="height: 32px; width: 32px; object-fit: contain;" />
+            <span>Rodcast Solutions</span>
+        </a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <i class="bi bi-house-door-fill me-2" aria-hidden="true"></i> Home
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="clients">
+                <i class="bi bi-people-fill me-2" aria-hidden="true"></i> Clientes
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="projects">
+                <i class="bi bi-kanban-fill me-2" aria-hidden="true"></i> Proyectos
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="bank-accounts">
+                <i class="bi bi-bank2 me-2" aria-hidden="true"></i> Cuentas Bancarias
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="company-settings">
+                <i class="bi bi-building-gear me-2" aria-hidden="true"></i> Datos de la Empresa
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="invoices">
+                <i class="bi bi-receipt me-2" aria-hidden="true"></i> Facturas
+            </NavLink>
+        </div>
+    </nav>
+</div>
+

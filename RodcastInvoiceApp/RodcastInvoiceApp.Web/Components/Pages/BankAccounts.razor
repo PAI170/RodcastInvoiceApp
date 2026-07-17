@@ -1,0 +1,180 @@
+@page "/bank-accounts"
+@using RodcastInvoiceApp.Web.DataTransferObjects.BankAccount
+@using RodcastInvoiceApp.Web.Exceptions
+@using RodcastInvoiceApp.Web.Interfaces
+@inject IBankAccountService BankAccountService
+
+<PageTitle>Cuentas Bancarias</PageTitle>
+
+<h1>Cuentas Bancarias</h1>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (accounts is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Banco</th>
+                <th>Titular</th>
+                <th>No. Cuenta</th>
+                <th>IBAN</th>
+                <th>SWIFT</th>
+                <th>Moneda</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var account in accounts)
+            {
+                if (editingId == account.Id && editingDto is not null)
+                {
+                    <tr>
+                        <td><input class="form-control" @bind="editingDto.BankName" /></td>
+                        <td><input class="form-control" @bind="editingDto.AccountHolder" /></td>
+                        <td><input class="form-control" @bind="editingDto.AccountNumber" /></td>
+                        <td><input class="form-control" @bind="editingDto.Iban" /></td>
+                        <td><input class="form-control" @bind="editingDto.Swift" /></td>
+                        <td><input class="form-control" @bind="editingDto.Currency" /></td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" @onclick="HandleUpdate">Guardar</button>
+                            <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancelar</button>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td>@account.BankName</td>
+                        <td>@account.AccountHolder</td>
+                        <td>@account.AccountNumber</td>
+                        <td>@account.Iban</td>
+                        <td>@account.Swift</td>
+                        <td>@account.Currency</td>
+                        <td>
+                            <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(account)">Editar</button>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(account.Id)">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+<h2>Nueva cuenta</h2>
+
+<EditForm Model="newAccount" FormName="NewBankAccountForm" OnValidSubmit="HandleCreate">
+    <div class="row g-2">
+        <div class="col-md-2">
+            <InputText class="form-control" placeholder="Banco" @bind-Value="newAccount.BankName" />
+        </div>
+        <div class="col-md-2">
+            <InputText class="form-control" placeholder="Titular" @bind-Value="newAccount.AccountHolder" />
+        </div>
+        <div class="col-md-2">
+            <InputText class="form-control" placeholder="No. Cuenta" @bind-Value="newAccount.AccountNumber" />
+        </div>
+        <div class="col-md-2">
+            <InputText class="form-control" placeholder="IBAN" @bind-Value="newAccount.Iban" />
+        </div>
+        <div class="col-md-2">
+            <InputText class="form-control" placeholder="SWIFT" @bind-Value="newAccount.Swift" />
+        </div>
+        <div class="col-md-2">
+            <InputText class="form-control" placeholder="Moneda" @bind-Value="newAccount.Currency" />
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Crear cuenta</button>
+</EditForm>
+
+@code {
+    private List<BankAccountResponseDto>? accounts;
+    private BankAccountCreateDto newAccount = new();
+    private int? editingId;
+    private BankAccountUpdateDto? editingDto;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        accounts = (await BankAccountService.GetAllAsync()).ToList();
+    }
+
+    private async Task HandleCreate()
+    {
+        errorMessage = null;
+        try
+        {
+            await BankAccountService.CreateAsync(newAccount);
+            newAccount = new BankAccountCreateDto();
+            await LoadAsync();
+        }
+        catch (Exception ex) when (ex is BadRequestException or ConflictException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void StartEdit(BankAccountResponseDto account)
+    {
+        editingId = account.Id;
+        editingDto = new BankAccountUpdateDto
+        {
+            BankName = account.BankName,
+            AccountHolder = account.AccountHolder,
+            AccountNumber = account.AccountNumber,
+            Iban = account.Iban,
+            Swift = account.Swift,
+            Currency = account.Currency
+        };
+    }
+
+    private void CancelEdit()
+    {
+        editingId = null;
+        editingDto = null;
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (editingId is null || editingDto is null) return;
+
+        errorMessage = null;
+        try
+        {
+            await BankAccountService.UpdateAsync(editingId.Value, editingDto);
+            CancelEdit();
+            await LoadAsync();
+        }
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleDelete(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await BankAccountService.DeleteAsync(id);
+            await LoadAsync();
+        }
+        catch (Exception ex) when (ex is ConflictException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

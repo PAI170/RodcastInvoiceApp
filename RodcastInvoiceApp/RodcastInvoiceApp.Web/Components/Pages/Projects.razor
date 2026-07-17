@@ -1,0 +1,216 @@
+@page "/projects"
+@using RodcastInvoiceApp.Web.Data.Models
+@using RodcastInvoiceApp.Web.DataTransferObjects.Client
+@using RodcastInvoiceApp.Web.DataTransferObjects.Project
+@using RodcastInvoiceApp.Web.Exceptions
+@using RodcastInvoiceApp.Web.Interfaces
+@inject IProjectService ProjectService
+@inject IClientService ClientService
+
+<PageTitle>Proyectos</PageTitle>
+
+<h1>Proyectos</h1>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (clients is null || projects is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <div class="mb-3" style="max-width: 300px;">
+        <label class="form-label">Filtrar por cliente</label>
+        <select class="form-select" @bind="selectedClientId" @bind:after="LoadProjectsAsync">
+            <option value="0">Todos los clientes</option>
+            @foreach (var client in clients)
+            {
+                <option value="@client.Id">@client.Name</option>
+            }
+        </select>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Centro de costo</th>
+                <th>Tipo de cobro</th>
+                <th>Activo</th>
+                <th>Tarifas</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var project in projects)
+            {
+                if (editingId == project.Id && editingDto is not null)
+                {
+                    <tr>
+                        <td>@project.ClientName</td>
+                        <td><input class="form-control" @bind="editingDto.Code" /></td>
+                        <td><input class="form-control" @bind="editingDto.Name" /></td>
+                        <td><input class="form-control" @bind="editingDto.CostCenter" /></td>
+                        <td>
+                            <select class="form-select" @bind="editingDto.BillingType">
+                                <option value="@BillingType.MonthlyRetainer">Retainer mensual</option>
+                                <option value="@BillingType.PerTicket">Por ticket</option>
+                            </select>
+                        </td>
+                        <td><input type="checkbox" @bind="editingDto.IsActive" /></td>
+                        <td>@project.PriceRuleCount</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" @onclick="HandleUpdate">Guardar</button>
+                            <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancelar</button>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td>@project.ClientName</td>
+                        <td>@project.Code</td>
+                        <td>@project.Name</td>
+                        <td>@project.CostCenter</td>
+                        <td>@(project.BillingType == BillingType.MonthlyRetainer ? "Retainer mensual" : "Por ticket")</td>
+                        <td>@(project.IsActive ? "Sí" : "No")</td>
+                        <td>@project.PriceRuleCount</td>
+                        <td>
+                            <a class="btn btn-outline-secondary btn-sm" href="@($"/projects/{project.Id}/price-rules")">Tarifas</a>
+                            <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(project)">Editar</button>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(project.Id)">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <h2>Nuevo proyecto</h2>
+
+    <EditForm Model="newProject" FormName="NewProjectForm" OnValidSubmit="HandleCreate">
+        <div class="row g-2">
+            <div class="col-md-2">
+                <InputSelect class="form-select" @bind-Value="newProject.ClientId">
+                    <option value="0">Selecciona un cliente</option>
+                    @foreach (var client in clients)
+                    {
+                        <option value="@client.Id">@client.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-md-2">
+                <InputText class="form-control" placeholder="Código" @bind-Value="newProject.Code" />
+            </div>
+            <div class="col-md-2">
+                <InputText class="form-control" placeholder="Nombre" @bind-Value="newProject.Name" />
+            </div>
+            <div class="col-md-2">
+                <InputText class="form-control" placeholder="Centro de costo (opcional)" @bind-Value="newProject.CostCenter" />
+            </div>
+            <div class="col-md-2">
+                <InputSelect class="form-select" @bind-Value="newProject.BillingType">
+                    <option value="@BillingType.MonthlyRetainer">Retainer mensual</option>
+                    <option value="@BillingType.PerTicket">Por ticket</option>
+                </InputSelect>
+            </div>
+            <div class="col-md-2">
+                <InputTextArea class="form-control" placeholder="Config (JSON)" @bind-Value="newProject.Config" />
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Crear proyecto</button>
+    </EditForm>
+}
+
+@code {
+    private List<ClientResponseDto>? clients;
+    private List<ProjectResponseDto>? projects;
+    private int selectedClientId;
+    private ProjectCreateDto newProject = new();
+    private int? editingId;
+    private ProjectUpdateDto? editingDto;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        clients = (await ClientService.GetAllAsync()).ToList();
+        await LoadProjectsAsync();
+    }
+
+    private async Task LoadProjectsAsync()
+    {
+        var filter = selectedClientId == 0 ? null : (int?)selectedClientId;
+        projects = (await ProjectService.GetAllAsync(filter)).ToList();
+    }
+
+    private async Task HandleCreate()
+    {
+        errorMessage = null;
+        try
+        {
+            await ProjectService.CreateAsync(newProject);
+            newProject = new ProjectCreateDto();
+            await LoadProjectsAsync();
+        }
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void StartEdit(ProjectResponseDto project)
+    {
+        editingId = project.Id;
+        editingDto = new ProjectUpdateDto
+        {
+            Name = project.Name,
+            Code = project.Code,
+            CostCenter = project.CostCenter,
+            IsActive = project.IsActive,
+            BillingType = project.BillingType,
+            Config = project.Config
+        };
+    }
+
+    private void CancelEdit()
+    {
+        editingId = null;
+        editingDto = null;
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (editingId is null || editingDto is null) return;
+
+        errorMessage = null;
+        try
+        {
+            await ProjectService.UpdateAsync(editingId.Value, editingDto);
+            CancelEdit();
+            await LoadProjectsAsync();
+        }
+        catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleDelete(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await ProjectService.DeleteAsync(id);
+            await LoadProjectsAsync();
+        }
+        catch (Exception ex) when (ex is ConflictException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

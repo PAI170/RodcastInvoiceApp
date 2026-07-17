@@ -1,0 +1,243 @@
+@page "/invoices/{InvoiceId:int}"
+@using RodcastInvoiceApp.Web.Data.Models
+@using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
+@using RodcastInvoiceApp.Web.DataTransferObjects.Payment
+@using RodcastInvoiceApp.Web.Exceptions
+@using RodcastInvoiceApp.Web.Interfaces
+@inject IInvoiceService InvoiceService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Factura @invoice?.InvoiceNumber</PageTitle>
+
+<p><a href="/invoices">← Volver a facturas</a></p>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (invoice is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <h1>Factura @invoice.InvoiceNumber</h1>
+    <p>
+        <strong>@invoice.ClientName</strong> / @invoice.ProjectName<br />
+        Cuenta bancaria: @invoice.BankAccountName<br />
+        Fecha: @invoice.InvoiceDate.ToString("yyyy-MM-dd") — Vencimiento: @invoice.DueDate.ToString("yyyy-MM-dd")<br />
+        @if (!string.IsNullOrWhiteSpace(invoice.TicketNumber))
+        {
+            <text>Ticket: @invoice.TicketNumber — @invoice.City / @invoice.SlaType<br /></text>
+        }
+    </p>
+
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Descripción</th>
+                <th>Cantidad</th>
+                <th>Unidad</th>
+                <th>Tarifa</th>
+                <th>Monto</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in invoice.Items)
+            {
+                <tr>
+                    <td>@item.Description</td>
+                    <td>@item.Quantity</td>
+                    <td>@item.Unit</td>
+                    <td>@item.Rate.ToString("0.00")</td>
+                    <td>@item.Amount.ToString("0.00")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p>
+        Subtotal: @invoice.Subtotal.ToString("0.00") @invoice.Currency<br />
+        IVA (@invoice.VatPercent%@(invoice.IsVatExonerated ? " - exonerado" : "")): @invoice.VatAmount.ToString("0.00") @invoice.Currency<br />
+        <strong>Total: @invoice.Total.ToString("0.00") @invoice.Currency</strong><br />
+        Pagado: @invoice.AmountPaid.ToString("0.00") — <strong>Saldo: @invoice.Balance.ToString("0.00")</strong>
+    </p>
+
+    @if (invoice.Status == InvoiceStatus.Paid)
+    {
+        <p><strong>Estado: Pagada</strong> — ya no se puede cambiar el estado de esta factura.</p>
+    }
+    else
+    {
+        <div class="mb-3" style="max-width: 200px;">
+            <label class="form-label">Estado</label>
+            <select class="form-select" @bind="selectedStatus">
+                <option value="@InvoiceStatus.Draft">Borrador</option>
+                <option value="@InvoiceStatus.Sent">Enviada</option>
+                <option value="@InvoiceStatus.Paid">Pagada</option>
+                <option value="@InvoiceStatus.Overdue">Vencida</option>
+            </select>
+        </div>
+    }
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        @if (invoice.Status != InvoiceStatus.Paid)
+        {
+            <button class="btn btn-outline-primary btn-sm" @onclick="HandleUpdateStatus">Actualizar estado</button>
+        }
+        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowInvoicePreview">Ver Factura</button>
+        <a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}/pdf?download=true")" target="_blank">Descargar Factura</a>
+        @if (invoice.HasTimesheet)
+        {
+            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowTimesheetPreview">Ver Timesheet</button>
+            <a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}/timesheet-pdf?download=true")" target="_blank">Descargar Timesheet</a>
+        }
+        <a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}/timesheet")">
+            @(invoice.HasTimesheet ? "Editar Timesheet" : "Generar Timesheet")
+        </a>
+        @if (invoice.CanEditOrDelete)
+        {
+            <a class="btn btn-outline-primary btn-sm" href="@($"/invoices/{invoice.Id}/edit")">Editar</a>
+            <button class="btn btn-outline-danger btn-sm" @onclick="HandleDelete">Eliminar factura</button>
+        }
+    </div>
+    @if (!invoice.CanEditOrDelete)
+    {
+        <p class="text-muted">Esta factura ya fue enviada, pagada, o tiene pagos registrados, así que no se puede editar ni eliminar.</p>
+    }
+
+    <h2>Pagos</h2>
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Monto</th>
+                <th>Método</th>
+                <th>Notas</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var payment in invoice.Payments)
+            {
+                <tr>
+                    <td>@payment.PaymentDate.ToString("yyyy-MM-dd")</td>
+                    <td>@payment.Amount.ToString("0.00")</td>
+                    <td>@payment.Method</td>
+                    <td>@payment.Notes</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h3>Registrar pago</h3>
+    <EditForm Model="newPayment" FormName="NewPaymentForm" OnValidSubmit="HandleAddPayment">
+        <div class="row g-2">
+            <div class="col-md-2">
+                <label class="form-label">Fecha</label>
+                <InputDate class="form-control" @bind-Value="newPayment.PaymentDate" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Monto</label>
+                <InputNumber class="form-control" step="0.01" @bind-Value="newPayment.Amount" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Método (opcional)</label>
+                <InputText class="form-control" @bind-Value="newPayment.Method" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Notas (opcional)</label>
+                <InputText class="form-control" @bind-Value="newPayment.Notes" />
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Registrar pago</button>
+    </EditForm>
+}
+
+<PdfPreviewModal IsVisible="showPdfPreview" PdfUrl="@pdfPreviewUrl" Title="@pdfPreviewTitle" OnClose="ClosePdfPreview" />
+
+@code {
+    [Parameter]
+    public int InvoiceId { get; set; }
+
+    private InvoiceResponseDto? invoice;
+    private InvoiceStatus selectedStatus;
+    private PaymentCreateDto newPayment = new();
+    private string? errorMessage;
+
+    private bool showPdfPreview;
+    private string? pdfPreviewUrl;
+    private string pdfPreviewTitle = string.Empty;
+
+    private void ShowPdfPreview(string url, string title)
+    {
+        pdfPreviewUrl = url;
+        pdfPreviewTitle = title;
+        showPdfPreview = true;
+    }
+
+    private void ShowInvoicePreview() =>
+        ShowPdfPreview($"/invoices/{invoice!.Id}/pdf", "Vista previa - Factura");
+
+    private void ShowTimesheetPreview() =>
+        ShowPdfPreview($"/invoices/{invoice!.Id}/timesheet-pdf", "Vista previa - Timesheet");
+
+    private void ClosePdfPreview()
+    {
+        showPdfPreview = false;
+        pdfPreviewUrl = null;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        invoice = await InvoiceService.GetByIdAsync(InvoiceId);
+        selectedStatus = invoice.Status;
+        newPayment = new PaymentCreateDto { InvoiceId = InvoiceId };
+    }
+
+    private async Task HandleUpdateStatus()
+    {
+        errorMessage = null;
+        try
+        {
+            invoice = await InvoiceService.UpdateStatusAsync(InvoiceId, selectedStatus);
+        }
+        catch (Exception ex) when (ex is NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleDelete()
+    {
+        errorMessage = null;
+        try
+        {
+            await InvoiceService.DeleteAsync(InvoiceId);
+            NavigationManager.NavigateTo("/invoices");
+        }
+        catch (Exception ex) when (ex is ConflictException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleAddPayment()
+    {
+        errorMessage = null;
+        try
+        {
+            await InvoiceService.AddPaymentAsync(newPayment);
+            await LoadAsync();
+        }
+        catch (Exception ex) when (ex is BadRequestException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}
