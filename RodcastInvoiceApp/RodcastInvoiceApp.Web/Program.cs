@@ -40,16 +40,32 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
         options.Password.RequireNonAlphanumeric = false;
         options.Password.RequireUppercase = false;
         options.Password.RequiredLength = 6;
+
+        // Bloqueo automatico por fuerza bruta: 3 intentos fallidos y se bloquea
+        // (mismo bloqueo que ya usa Users.razor, se desbloquea solo a los 5 min
+        // o antes a mano desde /users).
+        options.Lockout.MaxFailedAccessAttempts = 3;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
     })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
-    .AddSignInManager();
+    .AddSignInManager()
+    .AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>();
+
+// Revalida la cookie contra el SecurityStamp del usuario cada minuto: si un Admin
+// bloquea a alguien (Users.razor llama UpdateSecurityStampAsync), la sesion activa
+// de esa persona se corta sola en <= 1 minuto, no solo se le impide volver a entrar.
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+{
+    options.ValidationInterval = TimeSpan.FromMinutes(1);
+});
 
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddCookie(IdentityConstants.ApplicationScheme, options =>
     {
         options.LoginPath = "/account/login";
         options.AccessDeniedPath = "/account/login";
+        options.Events.OnValidatePrincipal = SecurityStampValidator.ValidatePrincipalAsync;
     });
 
 // Todas las paginas requieren estar autenticado por defecto; las que sean

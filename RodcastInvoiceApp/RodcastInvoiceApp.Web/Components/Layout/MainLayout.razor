@@ -7,13 +7,33 @@
 
     <main>
         <article class="content px-4">
-            @Body
+            <ErrorBoundary @ref="errorBoundary">
+                <ChildContent>
+                    @Body
+                </ChildContent>
+                <ErrorContent>
+                    <div class="alert alert-danger mt-3">
+                        <p>
+                            <strong>Ocurrió un error inesperado.</strong> Puede ser un problema temporal
+                            de conexión con la base de datos. Intentá de nuevo en unos segundos.
+                        </p>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="() => errorBoundary?.Recover()">
+                            Reintentar
+                        </button>
+                        <a class="btn btn-outline-secondary btn-sm" href=".">Recargar página</a>
+                    </div>
+                </ErrorContent>
+            </ErrorBoundary>
         </article>
     </main>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    Ocurrió un error inesperado.
+    <a href="." class="reload">Recargar</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private ErrorBoundary? errorBoundary;
+}

@@ -215,6 +215,10 @@ else
         {
             errorMessage = ex.Message;
         }
+        catch (Exception)
+        {
+            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+        }
     }
 
     private async Task HandleDelete()
@@ -229,6 +233,10 @@ else
         {
             errorMessage = ex.Message;
         }
+        catch (Exception)
+        {
+            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+        }
     }
 
     private async Task HandleAddPayment()
@@ -242,6 +250,10 @@ else
         catch (Exception ex) when (ex is BadRequestException or NotFoundException)
         {
             errorMessage = ex.Message;
+        }
+        catch (Exception)
+        {
+            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
         }
     }
 }

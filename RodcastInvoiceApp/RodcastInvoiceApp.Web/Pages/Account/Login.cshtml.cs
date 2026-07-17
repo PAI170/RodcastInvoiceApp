@@ -22,6 +22,9 @@ namespace RodcastInvoiceApp.Web.Pages.Account
         [BindProperty]
         public string Password { get; set; } = string.Empty;
 
+        [BindProperty]
+        public bool RememberMe { get; set; } = true;
+
         [BindProperty(SupportsGet = true)]
         public string? ReturnUrl { get; set; }
 
@@ -34,11 +37,15 @@ namespace RodcastInvoiceApp.Web.Pages.Account
         public async Task<IActionResult> OnPostAsync()
         {
             var result = await _signInManager.PasswordSignInAsync(
-                Email, Password, isPersistent: true, lockoutOnFailure: false);
+                Email, Password, isPersistent: RememberMe, lockoutOnFailure: true);
 
             if (!result.Succeeded)
             {
-                ErrorMessage = "Email o contraseña incorrectos.";
+                // No decimos "cuenta bloqueada" para no confirmarle a quien intenta
+                // entrar que el email existe y esta bloqueado especificamente.
+                ErrorMessage = result.IsLockedOut
+                    ? "Hubo un error, contactá al administrador."
+                    : "Email o contraseña incorrectos.";
                 return Page();
             }
 

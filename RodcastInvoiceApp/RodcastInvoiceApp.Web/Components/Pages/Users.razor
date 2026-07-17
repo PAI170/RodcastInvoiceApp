@@ -25,27 +25,64 @@ else
                 <th>Nombre</th>
                 <th>Email</th>
                 <th>Rol</th>
+                <th>Estado</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
             @foreach (var u in users)
             {
-                <tr>
-                    <td>@u.DisplayName</td>
-                    <td>@u.Email</td>
-                    <td>@u.Role</td>
-                    <td>
-                        @if (u.Id != currentUserId)
-                        {
-                            <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(u.Id)">Eliminar</button>
-                        }
-                        else
-                        {
-                            <span class="text-muted">(vos)</span>
-                        }
-                    </td>
-                </tr>
+                if (resettingUserId == u.Id)
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="d-flex align-items-center gap-2">
+                                <span>Nueva contraseña para <strong>@u.DisplayName</strong>:</span>
+                                <input class="form-control form-control-sm" style="max-width: 220px;"
+                                       type="password" placeholder="Mínimo 6 caracteres" @bind="newPassword" />
+                                <button class="btn btn-primary btn-sm" @onclick="() => HandleResetPassword(u.Id)">Guardar</button>
+                                <button class="btn btn-secondary btn-sm" @onclick="CancelReset">Cancelar</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td>@u.DisplayName</td>
+                        <td>@u.Email</td>
+                        <td>@u.Role</td>
+                        <td>
+                            @if (u.IsLockedOut)
+                            {
+                                <span class="badge text-bg-danger">Bloqueado</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-success">Activo</span>
+                            }
+                        </td>
+                        <td>
+                            <button class="btn btn-outline-secondary btn-sm" @onclick="() => StartReset(u.Id)">Restablecer contraseña</button>
+                            @if (u.Id != currentUserId)
+                            {
+                                @if (u.IsLockedOut)
+                                {
+                                    <button class="btn btn-outline-success btn-sm" @onclick="() => HandleToggleLock(u.Id)">Desbloquear acceso</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-outline-warning btn-sm" @onclick="() => HandleToggleLock(u.Id)">Bloquear acceso</button>
+                                }
+                                <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(u.Id)">Eliminar</button>
+                            }
+                            else
+                            {
+                                <span class="text-muted">(vos)</span>
+                            }
+                        </td>
+                    </tr>
+                }
             }
         </tbody>
     </table>
@@ -82,6 +119,8 @@ else
     private NewUserModel newUser = new();
     private string? errorMessage;
     private string? currentUserId;
+    private string? resettingUserId;
+    private string newPassword = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -105,7 +144,8 @@ else
                 Id = user.Id,
                 DisplayName = user.DisplayName,
                 Email = user.Email ?? string.Empty,
-                Role = roles.FirstOrDefault() ?? "(sin rol)"
+                Role = roles.FirstOrDefault() ?? "(sin rol)",
+                IsLockedOut = await UserManager.IsLockedOutAsync(user)
             });
         }
 
@@ -115,24 +155,30 @@ else
     private async Task HandleCreate()
     {
         errorMessage = null;
-
-        var user = new ApplicationUser
+        try
         {
-            UserName = newUser.Email,
-            Email = newUser.Email,
-            DisplayName = newUser.DisplayName
-        };
+            var user = new ApplicationUser
+            {
+                UserName = newUser.Email,
+                Email = newUser.Email,
+                DisplayName = newUser.DisplayName
+            };
 
-        var result = await UserManager.CreateAsync(user, newUser.Password);
-        if (!result.Succeeded)
-        {
-            errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
-            return;
+            var result = await UserManager.CreateAsync(user, newUser.Password);
+            if (!result.Succeeded)
+            {
+                errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+                return;
+            }
+
+            await UserManager.AddToRoleAsync(user, newUser.Role);
+            newUser = new NewUserModel();
+            await LoadUsersAsync();
         }
-
-        await UserManager.AddToRoleAsync(user, newUser.Role);
-        newUser = new NewUserModel();
-        await LoadUsersAsync();
+        catch (Exception)
+        {
+            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+        }
     }
 
     private async Task HandleDelete(string id)
@@ -141,12 +187,107 @@ else
             return;
 
         errorMessage = null;
-        var user = await UserManager.FindByIdAsync(id);
-        if (user is null)
+        try
+        {
+            var user = await UserManager.FindByIdAsync(id);
+            if (user is null)
+                return;
+
+            await UserManager.DeleteAsync(user);
+            await LoadUsersAsync();
+        }
+        catch (Exception)
+        {
+            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+        }
+    }
+
+    private async Task HandleToggleLock(string id)
+    {
+        if (id == currentUserId)
             return;
 
-        await UserManager.DeleteAsync(user);
-        await LoadUsersAsync();
+        errorMessage = null;
+        try
+        {
+            var user = await UserManager.FindByIdAsync(id);
+            if (user is null)
+                return;
+
+            if (await UserManager.IsLockedOutAsync(user))
+            {
+                await UserManager.SetLockoutEndDateAsync(user, null);
+            }
+            else
+            {
+                // Bloquea logins futuros y, via UpdateSecurityStampAsync, invalida
+                // tambien cualquier sesion ya activa (se corta sola en <= 1 minuto,
+                // ver SecurityStampValidatorOptions en Program.cs).
+                await UserManager.SetLockoutEnabledAsync(user, true);
+                await UserManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+                await UserManager.UpdateSecurityStampAsync(user);
+            }
+
+            await LoadUsersAsync();
+        }
+        catch (Exception)
+        {
+            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+        }
+    }
+
+    private void StartReset(string id)
+    {
+        errorMessage = null;
+        resettingUserId = id;
+        newPassword = string.Empty;
+    }
+
+    private void CancelReset()
+    {
+        resettingUserId = null;
+        newPassword = string.Empty;
+    }
+
+    private async Task HandleResetPassword(string id)
+    {
+        errorMessage = null;
+
+        // Se valida el largo antes de tocar nada: si RemovePasswordAsync ya corrio
+        // y AddPasswordAsync falla despues, el usuario queda sin contraseña del todo.
+        if (newPassword.Length < 6)
+        {
+            errorMessage = "La contraseña debe tener al menos 6 caracteres.";
+            return;
+        }
+
+        try
+        {
+            var user = await UserManager.FindByIdAsync(id);
+            if (user is null)
+                return;
+
+            // No hace falta la contraseña actual: quien entra a esta pagina ya es Admin.
+            var removeResult = await UserManager.RemovePasswordAsync(user);
+            if (!removeResult.Succeeded)
+            {
+                errorMessage = string.Join(" ", removeResult.Errors.Select(e => e.Description));
+                return;
+            }
+
+            var addResult = await UserManager.AddPasswordAsync(user, newPassword);
+            if (!addResult.Succeeded)
+            {
+                errorMessage = string.Join(" ", addResult.Errors.Select(e => e.Description));
+                return;
+            }
+
+            CancelReset();
+        }
+        catch (Exception)
+        {
+            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+        }
     }
 
     private class UserRow
@@ -155,6 +296,7 @@ else
         public string DisplayName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
+        public bool IsLockedOut { get; set; }
     }
 
     private class NewUserModel

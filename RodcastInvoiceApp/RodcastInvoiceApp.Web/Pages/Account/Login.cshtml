@@ -5,17 +5,106 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Iniciar sesión - Rodcast Invoicing</title>
+    <title>Iniciar sesión - Rodcast Invoice App</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/app.css" />
+    <link rel="icon" type="image/png" href="~/favicon.png" />
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background-color: #0F2A57;
+            background-image:
+                linear-gradient(160deg, rgba(30, 136, 199, 0.92) 0%, rgba(27, 62, 125, 0.94) 50%, rgba(15, 42, 87, 0.96) 100%),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1.4' opacity='0.16'%3E%3Crect x='14' y='10' width='42' height='56' rx='3'/%3E%3Cline x1='22' y1='24' x2='48' y2='24'/%3E%3Cline x1='22' y1='34' x2='48' y2='34'/%3E%3Cline x1='22' y1='44' x2='38' y2='44'/%3E%3Ccircle cx='104' cy='96' r='19'/%3E%3Cpath d='M104 87v18M97 100h14M99 92c0-2.5 2-4 5-4s5 1.5 5 4-2 3.5-5 3.5-5 1-5 3.5 2 4 5 4 5-1.5 5-4' stroke-width='1.2'/%3E%3C/g%3E%3C/svg%3E");
+            background-size: cover, 140px 140px;
+            background-position: center, center;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: #ffffff;
+            border-radius: 14px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+            padding: 36px 32px 28px;
+        }
+
+        .login-logo {
+            display: block;
+            margin: 0 auto 12px;
+            height: 84px;
+            width: 84px;
+            object-fit: contain;
+        }
+
+        .login-title {
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: 0.03em;
+            color: #1B3E7D;
+            margin-bottom: 4px;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.92rem;
+            margin-bottom: 24px;
+        }
+
+        .login-card .form-control {
+            padding: 0.65rem 0.9rem;
+            border-radius: 8px;
+            border-color: #dde3ea;
+        }
+
+        .login-card .form-control:focus {
+            border-color: #1E88C7;
+            box-shadow: 0 0 0 0.2rem rgba(30, 136, 199, 0.2);
+        }
+
+        .btn-login {
+            width: 100%;
+            border: none;
+            border-radius: 8px;
+            padding: 0.7rem;
+            font-weight: 600;
+            color: #fff;
+            background-image: linear-gradient(180deg, #1E88C7 0%, #1B3E7D 100%);
+        }
+
+        .btn-login:hover {
+            filter: brightness(1.05);
+            color: #fff;
+        }
+
+        .login-helper {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 16px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container" style="max-width: 400px; margin-top: 10vh;">
-        <h1 class="mb-4 text-center h3">Rodcast Invoicing</h1>
+    <div class="login-card">
+        <img class="login-logo" src="~/images/rodcast-logo.png" alt="Rodcast Solutions" />
+        <div class="login-title">RODCAST INVOICE APP</div>
+        <div class="login-subtitle">Iniciá sesión para continuar</div>
 
         @if (!string.IsNullOrEmpty(Model.ErrorMessage))
         {
-            <div class="alert alert-danger">@Model.ErrorMessage</div>
+            <div class="alert alert-danger py-2">@Model.ErrorMessage</div>
         }
 
         <form method="post">
@@ -28,8 +117,14 @@
                 <label class="form-label">Contraseña</label>
                 <input asp-for="Password" class="form-control" type="password" required />
             </div>
-            <button class="btn btn-primary w-100" type="submit">Entrar</button>
+            <div class="form-check mb-3">
+                <input asp-for="RememberMe" class="form-check-input" />
+                <label asp-for="RememberMe" class="form-check-label">Recordarme</label>
+            </div>
+            <button class="btn btn-login" type="submit">Iniciar sesión</button>
         </form>
+
+        <div class="login-helper">¿Olvidaste tu contraseña? Pedile a un administrador que te la restablezca.</div>
     </div>
 </body>
 </html>

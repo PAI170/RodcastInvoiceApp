@@ -161,5 +161,9 @@ else
         {
             errorMessage = ex.Message;
         }
+        catch (Exception)
+        {
+            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+        }
     }
 }
