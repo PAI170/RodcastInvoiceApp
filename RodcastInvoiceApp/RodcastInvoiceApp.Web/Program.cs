@@ -26,6 +26,9 @@ builder.Services.AddRazorComponents()
 // dentro de un circuito interactivo de Blazor Server (SignalR).
 builder.Services.AddRazorPages();
 
+// Cloudflare Turnstile: valida el captcha del login contra la API de Cloudflare.
+builder.Services.AddHttpClient<ITurnstileVerifier, TurnstileVerifier>();
+
 // Base de datos (MariaDB via Pomelo).
 // Version fija (no AutoDetect) para que "dotnet ef migrations add" funcione
 // sin necesitar una conexion real. Ajustar al version real de tu MariaDB en CloudPanel.

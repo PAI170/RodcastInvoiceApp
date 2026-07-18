@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RodcastInvoiceApp.Web.Data.Models;
+using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Pages.Account
 {
@@ -10,10 +11,16 @@ namespace RodcastInvoiceApp.Web.Pages.Account
     public class LoginModel : PageModel
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly ITurnstileVerifier _turnstileVerifier;
 
-        public LoginModel(SignInManager<ApplicationUser> signInManager)
+        public LoginModel(
+            SignInManager<ApplicationUser> signInManager,
+            ITurnstileVerifier turnstileVerifier,
+            IConfiguration configuration)
         {
             _signInManager = signInManager;
+            _turnstileVerifier = turnstileVerifier;
+            TurnstileSiteKey = configuration["Turnstile:SiteKey"] ?? string.Empty;
         }
 
         [BindProperty]
@@ -28,6 +35,8 @@ namespace RodcastInvoiceApp.Web.Pages.Account
         [BindProperty(SupportsGet = true)]
         public string? ReturnUrl { get; set; }
 
+        public string TurnstileSiteKey { get; }
+
         public string? ErrorMessage { get; set; }
 
         public void OnGet()
@@ -36,6 +45,14 @@ namespace RodcastInvoiceApp.Web.Pages.Account
 
         public async Task<IActionResult> OnPostAsync()
         {
+            var turnstileToken = Request.Form["cf-turnstile-response"].ToString();
+            var isHuman = await _turnstileVerifier.VerifyAsync(turnstileToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+            if (!isHuman)
+            {
+                ErrorMessage = "No se pudo verificar que sos una persona. Intentá de nuevo.";
+                return Page();
+            }
+
             var result = await _signInManager.PasswordSignInAsync(
                 Email, Password, isPersistent: RememberMe, lockoutOnFailure: true);
 
