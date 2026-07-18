@@ -27,6 +27,7 @@
 {
     <div class="alert alert-success">
         <p>Factura <strong>@createdInvoice.InvoiceNumber</strong> creada para @createdInvoice.ClientName / @createdInvoice.ProjectName.</p>
+        <div class="table-responsive">
         <table class="table table-sm">
             <thead>
                 <tr>
@@ -50,6 +51,7 @@
                 }
             </tbody>
         </table>
+        </div>
         <p>
             Subtotal: @createdInvoice.Subtotal.ToString("0.00") @createdInvoice.Currency<br />
             IVA (@createdInvoice.VatPercent%): @createdInvoice.VatAmount.ToString("0.00") @createdInvoice.Currency<br />

@@ -6,6 +6,9 @@
 
 main {
     flex: 1;
+    /* Sin esto, un hijo ancho (ej. una tabla con muchas columnas) estira
+       este contenedor flex y corre toda la pagina hacia la derecha en mobile. */
+    min-width: 0;
 }
 
 .sidebar {

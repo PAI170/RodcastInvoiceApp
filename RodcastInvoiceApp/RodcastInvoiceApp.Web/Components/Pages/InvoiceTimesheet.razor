@@ -28,7 +28,8 @@ else
     <h1>Timesheet - @MonthNames[timesheet.Month - 1] @timesheet.Year</h1>
     <p class="text-muted">@timesheet.ProjectName</p>
 
-    <table class="table table-bordered text-center" style="table-layout: fixed;">
+    <div class="table-responsive">
+    <table class="table table-bordered text-center" style="table-layout: fixed; min-width: 640px;">
         <thead>
             <tr>
                 <th>Sun</th>
@@ -72,6 +73,7 @@ else
             }
         </tbody>
     </table>
+    </div>
 
     <h3>Leyenda</h3>
     <div class="d-flex flex-wrap gap-3 mb-4">
