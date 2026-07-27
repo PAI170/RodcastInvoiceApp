@@ -155,8 +155,16 @@ app.UseAntiforgery();
 // (que no es Blazor y no tiene por que estar detras del FallbackPolicy).
 app.MapStaticAssets().AllowAnonymous();
 app.MapRazorPages();
+
+// AllowAnonymous acá es sobre el endpoint HTTP (deja pasar siempre el script
+// _framework/blazor.web.js y la conexion del circuito, sin los cuales la app
+// no carga ni para redirigir a login). La proteccion real de cada pagina
+// sigue intacta: la hace AuthorizeRouteView (Routes.razor) dentro del propio
+// arbol de componentes, evaluando el usuario autenticado independientemente
+// de esta politica HTTP.
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode()
+    .AllowAnonymous();
 
 // Endpoints para ver/descargar el PDF de una factura/timesheet (mas
 // confiable que JS interop para archivos binarios en Blazor Server).
