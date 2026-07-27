@@ -4,6 +4,7 @@ namespace RodcastInvoiceApp.Web.DataTransferObjects.Client
     {
         public string Name { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
+        public string? Email { get; set; }
         public string Country { get; set; } = string.Empty;
         public string VatId { get; set; } = string.Empty;
         public string? SupplierIdAssigned { get; set; }

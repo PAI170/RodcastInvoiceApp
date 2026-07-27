@@ -25,6 +25,7 @@ else
             <tr>
                 <th>Nombre</th>
                 <th>Dirección</th>
+                <th>Email</th>
                 <th>VAT ID</th>
                 <th>País</th>
                 <th>Moneda</th>
@@ -41,6 +42,7 @@ else
                     <tr>
                         <td><input class="form-control" @bind="editingDto.Name" /></td>
                         <td><input class="form-control" @bind="editingDto.Address" /></td>
+                        <td><input class="form-control" type="email" @bind="editingDto.Email" /></td>
                         <td><input class="form-control" @bind="editingDto.VatId" /></td>
                         <td><input class="form-control" @bind="editingDto.Country" /></td>
                         <td><input class="form-control" @bind="editingDto.DefaultCurrency" /></td>
@@ -57,6 +59,7 @@ else
                     <tr>
                         <td>@client.Name</td>
                         <td>@client.Address</td>
+                        <td>@client.Email</td>
                         <td>@client.VatId</td>
                         <td>@client.Country</td>
                         <td>@client.DefaultCurrency</td>
@@ -89,6 +92,9 @@ else
                 </div>
                 <div class="col-md-3">
                     <InputText class="form-control" placeholder="Dirección" @bind-Value="newClient.Address" />
+                </div>
+                <div class="col-md-3">
+                    <InputText class="form-control" type="email" placeholder="Email (opcional)" @bind-Value="newClient.Email" />
                 </div>
                 <div class="col-md-2">
                     <InputText class="form-control" placeholder="VAT ID" @bind-Value="newClient.VatId" />
@@ -151,6 +157,7 @@ else
         {
             Name = client.Name,
             Address = client.Address,
+            Email = client.Email,
             Country = client.Country,
             VatId = client.VatId,
             SupplierIdAssigned = client.SupplierIdAssigned,

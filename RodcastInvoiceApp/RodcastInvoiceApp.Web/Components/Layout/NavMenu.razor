@@ -64,14 +64,42 @@
 
     <AuthorizeView>
         <Authorized>
-            <div class="px-3 mt-4 text-white-50 small">
-                <div>@(context.User.FindFirst("DisplayName")?.Value ?? context.User.Identity?.Name)</div>
-                <form method="post" action="/account/logout">
-                    <AntiforgeryToken />
-                    <button class="btn btn-link btn-sm text-white-50 p-0" type="submit">Cerrar sesión</button>
-                </form>
+            <div class="px-3 mt-4 mb-2 dropdown">
+                <button class="btn profile-toggle d-flex align-items-center gap-2" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="profile-avatar">@GetInitial(context.User)</div>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><span class="dropdown-item-text fw-bold">@GetDisplayName(context.User)</span></li>
+                    <li><span class="dropdown-item-text text-muted small">@context.User.Identity?.Name</span></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li>
+                        <a class="dropdown-item" href="/mi-correo">
+                            <i class="bi bi-gear me-2" aria-hidden="true"></i>Ajustes
+                        </a>
+                    </li>
+                    <li>
+                        <form method="post" action="/account/logout">
+                            <AntiforgeryToken />
+                            <button class="dropdown-item" type="submit">
+                                <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Cerrar sesión
+                            </button>
+                        </form>
+                    </li>
+                </ul>
             </div>
         </Authorized>
     </AuthorizeView>
 </div>
+
+@code {
+    private static string GetDisplayName(System.Security.Claims.ClaimsPrincipal user) =>
+        user.FindFirst("DisplayName")?.Value ?? user.Identity?.Name ?? "Usuario";
+
+    private static string GetInitial(System.Security.Claims.ClaimsPrincipal user)
+    {
+        var name = GetDisplayName(user);
+        return name.Length > 0 ? name[0].ToString().ToUpperInvariant() : "?";
+    }
+}
 

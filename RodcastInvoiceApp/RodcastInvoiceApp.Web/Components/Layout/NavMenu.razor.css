@@ -67,6 +67,24 @@
     display: block;
 }
 
+.profile-toggle {
+    border: none;
+    padding: 0;
+    background: none;
+}
+
+.profile-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 @media (min-width: 641px) {
     .navbar-toggler {
         display: none;

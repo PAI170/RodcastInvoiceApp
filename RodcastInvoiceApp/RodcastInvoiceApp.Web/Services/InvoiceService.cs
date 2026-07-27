@@ -332,6 +332,7 @@ namespace RodcastInvoiceApp.Web.Services
                 ProjectName = invoice.Project.Name,
                 ProjectCostCenter = invoice.Project.CostCenter,
                 ClientName = invoice.Project.Client.Name,
+                ClientEmail = invoice.Project.Client.Email,
                 ClientAddress = invoice.Project.Client.Address,
                 ClientVatId = invoice.Project.Client.VatId,
                 ClientSupplierIdAssigned = invoice.Project.Client.SupplierIdAssigned,

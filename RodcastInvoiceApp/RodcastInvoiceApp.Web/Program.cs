@@ -1,6 +1,7 @@
 using FluentValidation;
 using Mapster;
 using MapsterMapper;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RodcastInvoiceApp.Web.Billing;
@@ -35,6 +36,17 @@ builder.Services.AddHttpClient<ITurnstileVerifier, TurnstileVerifier>();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, new MariaDbServerVersion(new Version(10, 6, 0))));
+
+// Data Protection: sin persistir la clave, un reinicio del contenedor invalida
+// las cookies de sesion Y las contraseñas SMTP encriptadas por usuario (Users.razor
+// "Mi correo"). "keys" debe montarse como volumen en Docker para sobrevivir.
+var dataProtectionPath = builder.Configuration["DataProtection:KeysPath"];
+if (!string.IsNullOrWhiteSpace(dataProtectionPath))
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath))
+        .SetApplicationName("RodcastInvoiceApp");
+}
 
 // ASP.NET Core Identity: cookie de autenticacion + roles (Admin / Employee).
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
@@ -82,6 +94,9 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddCascadingAuthenticationState();
 
+builder.Services.AddSingleton<ISmtpCredentialsProtector, SmtpCredentialsProtector>();
+builder.Services.AddSingleton<IEmailSender, MailKitEmailSender>();
+
 // FluentValidation: registra todos los validadores del proyecto (busca clases AbstractValidator<T>).
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
@@ -101,6 +116,7 @@ builder.Services.AddScoped<ICompanySettingsService, CompanySettingsService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<IInvoicePdfService, InvoicePdfService>();
 builder.Services.AddScoped<ITimesheetService, TimesheetService>();
+builder.Services.AddScoped<IInvoiceEmailService, InvoiceEmailService>();
 
 // Billing strategies: cada una se registra por separado y se resuelven todas
 // como IEnumerable<IBillingStrategy> en InvoiceService.

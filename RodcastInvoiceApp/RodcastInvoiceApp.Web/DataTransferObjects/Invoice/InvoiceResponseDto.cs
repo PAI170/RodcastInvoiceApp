@@ -10,6 +10,7 @@ namespace RodcastInvoiceApp.Web.DataTransferObjects.Invoice
         public string ProjectName { get; set; } = string.Empty;
         public string? ProjectCostCenter { get; set; }
         public string ClientName { get; set; } = string.Empty;
+        public string? ClientEmail { get; set; }
         public string ClientAddress { get; set; } = string.Empty;
         public string ClientVatId { get; set; } = string.Empty;
         public string? ClientSupplierIdAssigned { get; set; }

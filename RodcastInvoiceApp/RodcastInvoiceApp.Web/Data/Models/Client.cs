@@ -12,6 +12,10 @@ namespace RodcastInvoiceApp.Web.Data.Models
         [StringLength(250)]
         public string Address { get; set; } = string.Empty;
 
+        // Opcional: sin esto no se puede usar "Enviar por correo" en la factura.
+        [StringLength(150)]
+        public string? Email { get; set; }
+
         [StringLength(100)]
         public string Country { get; set; } = string.Empty;
 

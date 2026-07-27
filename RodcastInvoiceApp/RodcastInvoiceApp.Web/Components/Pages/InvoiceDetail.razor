@@ -1,10 +1,13 @@
 @page "/invoices/{InvoiceId:int}"
+@using Microsoft.AspNetCore.Identity
 @using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
 @using RodcastInvoiceApp.Web.DataTransferObjects.Payment
 @using RodcastInvoiceApp.Web.Exceptions
 @using RodcastInvoiceApp.Web.Interfaces
 @inject IInvoiceService InvoiceService
+@inject IInvoiceEmailService InvoiceEmailService
+@inject UserManager<ApplicationUser> UserManager
 @inject NavigationManager NavigationManager
 
 <PageTitle>Factura @invoice?.InvoiceNumber</PageTitle>
@@ -14,6 +17,11 @@
 @if (errorMessage is not null)
 {
     <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (successMessage is not null)
+{
+    <div class="alert alert-success">@successMessage</div>
 }
 
 @if (invoice is null)
@@ -90,6 +98,7 @@ else
         }
         <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowInvoicePreview">Ver Factura</button>
         <a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}/pdf?download=true")" target="_blank">Descargar Factura</a>
+        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowEmailPreview">Enviar por correo</button>
         @if (invoice.HasTimesheet)
         {
             <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowTimesheetPreview">Ver Timesheet</button>
@@ -164,7 +173,13 @@ else
 
 <PdfPreviewModal IsVisible="showPdfPreview" PdfUrl="@pdfPreviewUrl" Title="@pdfPreviewTitle" OnClose="ClosePdfPreview" />
 
+<EmailPreviewModal IsVisible="showEmailPreview" Preview="emailPreview" IsSending="isSendingEmail"
+                   OnClose="CloseEmailPreview" OnConfirm="HandleSendEmail" />
+
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
     [Parameter]
     public int InvoiceId { get; set; }
 
@@ -172,10 +187,15 @@ else
     private InvoiceStatus selectedStatus;
     private PaymentCreateDto newPayment = new();
     private string? errorMessage;
+    private string? successMessage;
 
     private bool showPdfPreview;
     private string? pdfPreviewUrl;
     private string pdfPreviewTitle = string.Empty;
+
+    private bool showEmailPreview;
+    private bool isSendingEmail;
+    private InvoiceEmailPreviewDto? emailPreview;
 
     private void ShowPdfPreview(string url, string title)
     {
@@ -194,6 +214,62 @@ else
     {
         showPdfPreview = false;
         pdfPreviewUrl = null;
+    }
+
+    private async Task<ApplicationUser?> GetCurrentUserAsync()
+    {
+        if (AuthStateTask is null)
+            return null;
+
+        var authState = await AuthStateTask;
+        return await UserManager.GetUserAsync(authState.User);
+    }
+
+    private async Task ShowEmailPreview()
+    {
+        errorMessage = null;
+        successMessage = null;
+        showEmailPreview = true;
+        emailPreview = null;
+
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser is null)
+            return;
+
+        emailPreview = await InvoiceEmailService.BuildPreviewAsync(InvoiceId, currentUser);
+    }
+
+    private void CloseEmailPreview()
+    {
+        showEmailPreview = false;
+        emailPreview = null;
+    }
+
+    private async Task HandleSendEmail()
+    {
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser is null)
+            return;
+
+        isSendingEmail = true;
+        try
+        {
+            await InvoiceEmailService.SendAsync(InvoiceId, currentUser);
+            CloseEmailPreview();
+            successMessage = "Correo enviado.";
+        }
+        catch (Exception ex) when (ex is BadRequestException or NotFoundException)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (Exception)
+        {
+            errorMessage = "No se pudo enviar el correo. Revisá los datos en \"Mi correo\" e intentá de nuevo.";
+        }
+        finally
+        {
+            isSendingEmail = false;
+        }
     }
 
     protected override async Task OnInitializedAsync()

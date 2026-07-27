@@ -1,0 +1,129 @@
+@page "/mi-correo"
+@using Microsoft.AspNetCore.Identity
+@using RodcastInvoiceApp.Web.Data.Models
+@using RodcastInvoiceApp.Web.Security
+@inject UserManager<ApplicationUser> UserManager
+@inject ISmtpCredentialsProtector CredentialsProtector
+
+<PageTitle>Mi correo</PageTitle>
+
+<h1>Mi correo</h1>
+<p class="text-muted">
+    Configurá tu propio correo (el mismo que usás en Roundcube) para poder mandar facturas
+    por email — el correo sale desde tu cuenta, no de una compartida.
+</p>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (successMessage is not null)
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (model is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <EditForm Model="model" FormName="EmailSettingsForm" OnValidSubmit="HandleSave">
+        <div class="row g-2" style="max-width: 600px;">
+            <div class="col-md-8">
+                <label class="form-label">Servidor SMTP (host)</label>
+                <InputText class="form-control" placeholder="mail.tudominio.com" @bind-Value="model.Host" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Puerto</label>
+                <InputNumber class="form-control" @bind-Value="model.Port" />
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">Tu email</label>
+                <InputText class="form-control" type="email" placeholder="tu@tudominio.com" @bind-Value="model.Username" />
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">Contraseña</label>
+                <InputText class="form-control" type="password" placeholder="@passwordPlaceholder" @bind-Value="model.Password" />
+                <div class="form-text">Dejala en blanco para no cambiarla.</div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Guardar</button>
+    </EditForm>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private ApplicationUser? currentUser;
+    private SettingsModel? model;
+    private string passwordPlaceholder = "••••••••";
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask is null)
+            return;
+
+        var authState = await AuthStateTask;
+        currentUser = await UserManager.GetUserAsync(authState.User);
+        if (currentUser is null)
+            return;
+
+        model = new SettingsModel
+        {
+            Host = currentUser.SmtpHost ?? string.Empty,
+            Port = currentUser.SmtpPort ?? 465,
+            Username = currentUser.SmtpUsername ?? currentUser.Email ?? string.Empty
+        };
+
+        passwordPlaceholder = string.IsNullOrEmpty(currentUser.SmtpPasswordProtected)
+            ? "sin configurar"
+            : "••••••••";
+    }
+
+    private async Task HandleSave()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (currentUser is null || model is null)
+            return;
+
+        try
+        {
+            currentUser.SmtpHost = model.Host;
+            currentUser.SmtpPort = model.Port;
+            currentUser.SmtpUsername = model.Username;
+
+            if (!string.IsNullOrWhiteSpace(model.Password))
+                currentUser.SmtpPasswordProtected = CredentialsProtector.Protect(model.Password);
+
+            var result = await UserManager.UpdateAsync(currentUser);
+            if (!result.Succeeded)
+            {
+                errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+                return;
+            }
+
+            model.Password = string.Empty;
+            passwordPlaceholder = "••••••••";
+            successMessage = "Guardado.";
+        }
+        catch (Exception)
+        {
+            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+        }
+    }
+
+    private class SettingsModel
+    {
+        public string Host { get; set; } = string.Empty;
+        public int Port { get; set; } = 465;
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

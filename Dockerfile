@@ -29,4 +29,13 @@ COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
+# Claves de Data Protection (cookies de sesion + contraseñas SMTP encriptadas
+# en "Mi correo"): quedan por defecto en /app/keys. VOLUME hace que Docker le
+# cree un volumen aunque el "docker run" no pase un -v explicito, para que un
+# redeploy no invalide sesiones ni borre las contraseñas guardadas. Igual se
+# recomienda nombrar el volumen a mano (-v rodcast-keys:/app/keys) para poder
+# identificarlo/respaldarlo despues.
+ENV DataProtection__KeysPath=/app/keys
+VOLUME /app/keys
+
 ENTRYPOINT ["dotnet", "RodcastInvoiceApp.Web.dll"]
