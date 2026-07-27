@@ -1,6 +1,7 @@
 using FluentValidation;
 using Mapster;
 using MapsterMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -83,12 +84,18 @@ builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
         options.Events.OnValidatePrincipal = SecurityStampValidator.ValidatePrincipalAsync;
     });
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<IAuthorizationHandler, FrameworkAssetOrAuthenticatedHandler>();
+
 // Todas las paginas requieren estar autenticado por defecto; las que sean
-// publicas (login) se marcan con [AllowAnonymous] explicitamente.
+// publicas (login) se marcan con [AllowAnonymous] explicitamente. Los
+// assets bajo /_framework (blazor.web.js, el hub de SignalR) siempre pasan,
+// via FrameworkAssetOrAuthenticatedRequirement - ver Security/FrameworkAssetAuthorization.cs
+// para el por que (no dependemos de adivinar que Map... los registra).
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
+        .AddRequirements(new FrameworkAssetOrAuthenticatedRequirement())
         .Build();
 });
 
