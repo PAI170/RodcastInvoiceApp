@@ -1,5 +1,6 @@
 @page "/invoices/new"
 @page "/invoices/{InvoiceId:int}/edit"
+@attribute [Authorize]
 @using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.BankAccount
 @using RodcastInvoiceApp.Web.DataTransferObjects.Invoice

@@ -1,4 +1,5 @@
 @page "/invoices/{InvoiceId:int}"
+@attribute [Authorize]
 @using Microsoft.AspNetCore.Identity
 @using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
