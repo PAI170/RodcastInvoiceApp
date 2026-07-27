@@ -8,7 +8,10 @@
     <title>Iniciar sesión - Rodcast Invoice App</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="icon" type="image/png" href="~/favicon.png" />
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    @if (Model.ShowTurnstile)
+    {
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    }
     <style>
         html, body {
             height: 100%;
@@ -122,7 +125,10 @@
                 <input asp-for="RememberMe" class="form-check-input" />
                 <label asp-for="RememberMe" class="form-check-label">Recordarme</label>
             </div>
-            <div class="cf-turnstile mb-3" data-sitekey="@Model.TurnstileSiteKey"></div>
+            @if (Model.ShowTurnstile)
+            {
+                <div class="cf-turnstile mb-3" data-sitekey="@Model.TurnstileSiteKey"></div>
+            }
             <button class="btn btn-login" type="submit">Iniciar sesión</button>
         </form>
 

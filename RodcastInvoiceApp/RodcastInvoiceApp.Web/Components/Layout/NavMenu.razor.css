@@ -85,6 +85,17 @@
     justify-content: center;
 }
 
+.dropdown-menu {
+    margin-top: 0.75rem !important;
+    padding: 0.75rem 0 !important;
+    min-width: 220px;
+}
+
+.dropdown-menu ::deep .dropdown-item-text,
+.dropdown-menu ::deep .dropdown-item {
+    padding: 0.5rem 1.25rem;
+}
+
 @media (min-width: 641px) {
     .navbar-toggler {
         display: none;

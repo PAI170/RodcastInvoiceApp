@@ -12,14 +12,17 @@ namespace RodcastInvoiceApp.Web.Pages.Account
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ITurnstileVerifier _turnstileVerifier;
+        private readonly IWebHostEnvironment _environment;
 
         public LoginModel(
             SignInManager<ApplicationUser> signInManager,
             ITurnstileVerifier turnstileVerifier,
+            IWebHostEnvironment environment,
             IConfiguration configuration)
         {
             _signInManager = signInManager;
             _turnstileVerifier = turnstileVerifier;
+            _environment = environment;
             TurnstileSiteKey = configuration["Turnstile:SiteKey"] ?? string.Empty;
         }
 
@@ -37,6 +40,10 @@ namespace RodcastInvoiceApp.Web.Pages.Account
 
         public string TurnstileSiteKey { get; }
 
+        // En Development (correr local desde Visual Studio) el widget de Turnstile
+        // no valida bien contra "localhost", asi que se salta el chequeo.
+        public bool ShowTurnstile => !_environment.IsDevelopment();
+
         public string? ErrorMessage { get; set; }
 
         public void OnGet()
@@ -45,12 +52,15 @@ namespace RodcastInvoiceApp.Web.Pages.Account
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var turnstileToken = Request.Form["cf-turnstile-response"].ToString();
-            var isHuman = await _turnstileVerifier.VerifyAsync(turnstileToken, HttpContext.Connection.RemoteIpAddress?.ToString());
-            if (!isHuman)
+            if (ShowTurnstile)
             {
-                ErrorMessage = "No se pudo verificar que sos una persona. Intentá de nuevo.";
-                return Page();
+                var turnstileToken = Request.Form["cf-turnstile-response"].ToString();
+                var isHuman = await _turnstileVerifier.VerifyAsync(turnstileToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+                if (!isHuman)
+                {
+                    ErrorMessage = "No se pudo verificar que sos una persona. Intentá de nuevo.";
+                    return Page();
+                }
             }
 
             var result = await _signInManager.PasswordSignInAsync(

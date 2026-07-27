@@ -64,14 +64,14 @@
 
     <AuthorizeView>
         <Authorized>
-            <div class="px-3 mt-4 mb-2 dropdown">
+            <div class="px-3 mt-4 mb-2 dropdown" onclick="event.stopPropagation()">
                 <button class="btn profile-toggle d-flex align-items-center gap-2" type="button"
                         data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="profile-avatar">@GetInitial(context.User)</div>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-dark">
                     <li><span class="dropdown-item-text fw-bold">@GetDisplayName(context.User)</span></li>
-                    <li><span class="dropdown-item-text text-muted small">@context.User.Identity?.Name</span></li>
+                    <li><span class="dropdown-item-text small">@context.User.Identity?.Name</span></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li>
                         <a class="dropdown-item" href="/mi-correo">
