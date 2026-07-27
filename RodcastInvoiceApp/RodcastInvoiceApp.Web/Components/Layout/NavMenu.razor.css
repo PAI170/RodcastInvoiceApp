@@ -76,6 +76,7 @@
 .profile-avatar {
     width: 2.5rem;
     height: 2.5rem;
+    flex-shrink: 0;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.15);
     color: white;
@@ -83,6 +84,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.profile-name {
+    min-width: 0;
+    font-weight: 600;
 }
 
 .dropdown-menu {
