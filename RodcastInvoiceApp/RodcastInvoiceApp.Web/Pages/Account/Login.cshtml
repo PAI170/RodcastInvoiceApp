@@ -115,15 +115,11 @@
             <input type="hidden" asp-for="ReturnUrl" />
             <div class="mb-3">
                 <label class="form-label">Email</label>
-                <input asp-for="Email" class="form-control" type="email" required autofocus />
+                <input asp-for="Email" class="form-control" type="email" autocomplete="username" required autofocus />
             </div>
             <div class="mb-3">
                 <label class="form-label">Contraseña</label>
-                <input asp-for="Password" class="form-control" type="password" required />
-            </div>
-            <div class="form-check mb-3">
-                <input asp-for="RememberMe" class="form-check-input" />
-                <label asp-for="RememberMe" class="form-check-label">Recordarme</label>
+                <input asp-for="Password" class="form-control" type="password" autocomplete="current-password" required />
             </div>
             @if (Model.ShowTurnstile)
             {

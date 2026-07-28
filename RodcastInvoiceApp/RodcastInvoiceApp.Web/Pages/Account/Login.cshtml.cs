@@ -32,9 +32,6 @@ namespace RodcastInvoiceApp.Web.Pages.Account
         [BindProperty]
         public string Password { get; set; } = string.Empty;
 
-        [BindProperty]
-        public bool RememberMe { get; set; } = true;
-
         [BindProperty(SupportsGet = true)]
         public string? ReturnUrl { get; set; }
 
@@ -63,8 +60,12 @@ namespace RodcastInvoiceApp.Web.Pages.Account
                 }
             }
 
+            // isPersistent: false siempre - la cookie de sesion muere al cerrar el
+            // navegador del todo (no cada pestaña). Que el navegador se acuerde del
+            // email/contraseña es cosa de su propio gestor de contraseñas via los
+            // atributos autocomplete del formulario, no de esto.
             var result = await _signInManager.PasswordSignInAsync(
-                Email, Password, isPersistent: RememberMe, lockoutOnFailure: true);
+                Email, Password, isPersistent: false, lockoutOnFailure: true);
 
             if (!result.Succeeded)
             {
