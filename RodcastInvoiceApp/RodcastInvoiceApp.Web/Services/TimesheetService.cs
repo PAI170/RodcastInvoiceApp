@@ -50,14 +50,15 @@ namespace RodcastInvoiceApp.Web.Services
                 .FirstOrDefaultAsync(i => i.Id == invoiceId)
                 ?? throw new NotFoundException(_loc["SvcErr_InvoiceNotFound"]);
 
-            var daysInMonth = DateTime.DaysInMonth(invoice.InvoiceDate.Year, invoice.InvoiceDate.Month);
+            var (year, month) = GetTimesheetPeriod(invoice);
+            var daysInMonth = DateTime.DaysInMonth(year, month);
 
             foreach (var exception in dto.Exceptions)
             {
                 if (exception.Day < 1 || exception.Day > daysInMonth)
                     throw new BadRequestException(_loc["SvcErr_TimesheetInvalidDay", exception.Day]);
 
-                var date = new DateTime(invoice.InvoiceDate.Year, invoice.InvoiceDate.Month, exception.Day);
+                var date = new DateTime(year, month, exception.Day);
                 if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
                     throw new BadRequestException(_loc["SvcErr_TimesheetWeekend", exception.Day]);
             }
@@ -86,19 +87,28 @@ namespace RodcastInvoiceApp.Web.Services
 
         private static TimesheetDto BuildDto(Invoice invoice)
         {
+            var (year, month) = GetTimesheetPeriod(invoice);
             var exceptions = ParseExceptions(invoice.TimesheetExceptions);
-            var weeks = TimesheetCalendarBuilder.BuildWeeks(
-                invoice.InvoiceDate.Year, invoice.InvoiceDate.Month, exceptions);
+            var weeks = TimesheetCalendarBuilder.BuildWeeks(year, month, exceptions);
 
             return new TimesheetDto
             {
                 InvoiceId = invoice.Id,
-                Month = invoice.InvoiceDate.Month,
-                Year = invoice.InvoiceDate.Year,
+                Month = month,
+                Year = year,
                 ProjectName = invoice.Project.Name,
                 Weeks = weeks
             };
         }
+
+        // El calendario del timesheet es del mes que se factura (BillingMonth/Year -
+        // el retainer se cobra por adelantado, ej. 28 de julio factura agosto), no
+        // del mes de la fecha de la factura. Si BillingMonth no esta seteado (proyectos
+        // per_ticket, o facturas viejas de antes de este campo) se usa InvoiceDate.
+        private static (int Year, int Month) GetTimesheetPeriod(Invoice invoice) =>
+            invoice.BillingMonth is >= 1 and <= 12
+                ? (invoice.BillingYear, invoice.BillingMonth)
+                : (invoice.InvoiceDate.Year, invoice.InvoiceDate.Month);
 
         private static List<TimesheetDayException> ParseExceptions(string? json)
         {
