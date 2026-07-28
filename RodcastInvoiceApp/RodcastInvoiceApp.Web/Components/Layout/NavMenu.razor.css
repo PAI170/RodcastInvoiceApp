@@ -102,6 +102,12 @@
     padding: 0.5rem 1.25rem;
 }
 
+.language-switch-row {
+    /* Solo empuja algo cuando el padre es flex con altura definida (ver
+       .nav-scrollable en el media query de escritorio); en mobile no hace nada. */
+    margin-top: auto;
+}
+
 @media (min-width: 641px) {
     .navbar-toggler {
         display: none;
@@ -109,7 +115,8 @@
 
     .nav-scrollable {
         /* Never collapse the sidebar for wide screens */
-        display: block;
+        display: flex;
+        flex-direction: column;
 
         /* Allow sidebar to scroll for tall menus */
         height: calc(100vh - 3.5rem);
