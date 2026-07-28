@@ -80,6 +80,12 @@ namespace RodcastInvoiceApp.Web.Data.Models
         public int VacationDays { get; set; }
         public int WorkedDays { get; set; }
 
+        // Mes/anio que se factura (el retainer se cobra por adelantado: el 28 de
+        // julio se factura agosto). Independiente de InvoiceDate, que es la fecha
+        // real en que se emite la factura. Solo aplica a monthly_retainer.
+        public int BillingMonth { get; set; }
+        public int BillingYear { get; set; }
+
         [Column(TypeName = "decimal(10,2)")]
         public decimal OvertimeHoursToInvoice { get; set; }
 

@@ -20,6 +20,11 @@ namespace RodcastInvoiceApp.Web.DataTransferObjects.Invoice
         public int WorkedDays { get; set; }
         public decimal OvertimeHoursToInvoice { get; set; }
 
+        // Mes/anio que se factura (independiente de InvoiceDate - el retainer se
+        // cobra por adelantado). 0 = todavia no elegido.
+        public int BillingMonth { get; set; }
+        public int BillingYear { get; set; } = DateTime.Today.Year;
+
         // Solo aplican a proyectos per_ticket.
         public string? TicketNumber { get; set; }
         public string? City { get; set; }

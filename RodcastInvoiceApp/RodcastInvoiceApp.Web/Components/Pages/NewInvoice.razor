@@ -144,6 +144,21 @@ else
         {
             <h3 class="mt-4">@Loc["NewInvoice_MonthlyRetainerTitle"]</h3>
             <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">@Loc["NewInvoice_BillingMonth"]</label>
+                    <InputSelect class="form-select" @bind-Value="dto.BillingMonth" @bind-Value:after="OnBillingPeriodChanged">
+                        <option value="0">@Loc["NewInvoice_Select"]</option>
+                        @for (var m = 1; m <= 12; m++)
+                        {
+                            var monthValue = m;
+                            <option value="@monthValue">@MonthName(monthValue)</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">@Loc["NewInvoice_BillingYear"]</label>
+                    <InputNumber class="form-control" @bind-Value="dto.BillingYear" @bind-Value:after="OnBillingPeriodChanged" />
+                </div>
                 <div class="col-md-2">
                     <label class="form-label">@Loc["NewInvoice_VacationDays"]</label>
                     <InputNumber class="form-control" @bind-Value="dto.VacationDays" />
@@ -158,8 +173,15 @@ else
                 </div>
             </div>
             <p class="text-muted mt-1">
+                @Loc["NewInvoice_BillingMonthHelp"]
                 @Loc["NewInvoice_MonthlyRetainerHelp"]
             </p>
+            @if (billingPeriodAlreadyInvoiced)
+            {
+                <div class="alert alert-warning">
+                    @Loc["NewInvoice_BillingPeriodWarning", MonthName(dto.BillingMonth), dto.BillingYear]
+                </div>
+            }
         }
 
         @if (selectedProject is not null && selectedProject.BillingType == BillingType.PerTicket)
@@ -226,8 +248,21 @@ else
     private bool isSubmitting;
     private bool canEditInvoice = true;
     private decimal ticketDurationHours = 1m;
+    private bool billingPeriodAlreadyInvoiced;
 
     private int AdditionalMinutesPreview => dto.ApprovedAdditionalMinutes;
+
+    private static string MonthName(int month) =>
+        month is >= 1 and <= 12
+            ? System.Globalization.CultureInfo.CurrentUICulture.DateTimeFormat.GetMonthName(month)
+            : string.Empty;
+
+    private async Task OnBillingPeriodChanged()
+    {
+        billingPeriodAlreadyInvoiced = dto.ProjectId != 0 && dto.BillingMonth is >= 1 and <= 12
+            && await InvoiceService.HasInvoiceForBillingPeriodAsync(
+                dto.ProjectId, dto.BillingMonth, dto.BillingYear, excludeInvoiceId: InvoiceId);
+    }
 
     private void OnDurationChanged()
     {
@@ -276,6 +311,8 @@ else
                 VacationDays = invoice.VacationDays,
                 WorkedDays = invoice.WorkedDays,
                 OvertimeHoursToInvoice = invoice.OvertimeHoursToInvoice,
+                BillingMonth = invoice.BillingMonth,
+                BillingYear = invoice.BillingYear,
                 TicketNumber = invoice.TicketNumber,
                 City = invoice.City,
                 SlaType = invoice.SlaType,
@@ -301,6 +338,8 @@ else
         dto.SlaType = null;
         dto.ApprovedAdditionalMinutes = 0;
         ticketDurationHours = 1m;
+        dto.BillingMonth = 0;
+        billingPeriodAlreadyInvoiced = false;
 
         if (selectedProject is not null && selectedProject.BillingType == BillingType.PerTicket)
         {
@@ -332,6 +371,7 @@ else
                 selectedProject = null;
                 priceRulesForProject.Clear();
                 ticketDurationHours = 1m;
+                billingPeriodAlreadyInvoiced = false;
             }
         }
         catch (Exception ex) when (ex is BadRequestException or ConflictException or NotFoundException or ForbiddenException)

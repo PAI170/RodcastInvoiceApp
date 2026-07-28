@@ -262,6 +262,10 @@
   <data name="NewInvoice_VatExonerated" xml:space="preserve"><value>VAT exonerated</value></data>
   <data name="NewInvoice_PaymentMethodOptional" xml:space="preserve"><value>Payment method (optional)</value></data>
   <data name="NewInvoice_MonthlyRetainerTitle" xml:space="preserve"><value>Month details (Monthly retainer)</value></data>
+  <data name="NewInvoice_BillingMonth" xml:space="preserve"><value>Month being invoiced</value></data>
+  <data name="NewInvoice_BillingYear" xml:space="preserve"><value>Year being invoiced</value></data>
+  <data name="NewInvoice_BillingMonthHelp" xml:space="preserve"><value>Independent of the invoice date above — e.g. issue the invoice on July 28th for the August retainer.</value></data>
+  <data name="NewInvoice_BillingPeriodWarning" xml:space="preserve"><value>This project already has an invoice for {0} {1}.</value></data>
   <data name="NewInvoice_VacationDays" xml:space="preserve"><value>Vacation days</value></data>
   <data name="NewInvoice_WorkedDays" xml:space="preserve"><value>Worked days</value></data>
   <data name="NewInvoice_OvertimeHoursPrevMonth" xml:space="preserve"><value>Overtime hours to invoice (previous month)</value></data>
@@ -331,6 +335,7 @@
   <data name="SvcErr_ApprovalNotFound" xml:space="preserve"><value>Approval request not found.</value></data>
   <data name="SvcErr_ApprovalAlreadyReviewed" xml:space="preserve"><value>This request was already reviewed.</value></data>
   <data name="SvcErr_Forbidden" xml:space="preserve"><value>You don't have permission to perform this action.</value></data>
+  <data name="SvcErr_BillingMonthRequired" xml:space="preserve"><value>Select the month you're invoicing for.</value></data>
 
   <!-- Validators (FluentValidation) -->
   <data name="Val_MaxLength" xml:space="preserve"><value>Can't exceed {0} characters.</value></data>

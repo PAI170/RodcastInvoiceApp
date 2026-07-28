@@ -7,8 +7,17 @@ namespace RodcastInvoiceApp.Web.Billing
     // Datos de captura mensual para proyectos monthly_retainer.
     public class MonthlyRetainerInput : BillingInput
     {
+        // Mes/anio que se esta facturando (el retainer se cobra por adelantado:
+        // el 28 de julio se factura agosto). Va en la linea de "Engineer Onsite Support".
         public int Month { get; set; }
         public int Year { get; set; }
+
+        // Mes/anio en que se trabajaron las horas extra: siempre el mes de la fecha
+        // de la factura (la extra se factura retroactiva, no por adelantado como el
+        // retainer). Va en la linea de "Overtime", que puede quedar en un mes
+        // distinto al de la linea del retainer de arriba.
+        public int OvertimeMonth { get; set; }
+        public int OvertimeYear { get; set; }
 
         // 0 = mes normal (dispara el monto fijo). > 0 = mes con vacaciones (se factura por horas).
         public int VacationDays { get; set; }

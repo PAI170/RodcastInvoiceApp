@@ -118,6 +118,8 @@ namespace RodcastInvoiceApp.Web.Services
                 VacationDays = dto.VacationDays,
                 WorkedDays = dto.WorkedDays,
                 OvertimeHoursToInvoice = dto.OvertimeHoursToInvoice,
+                BillingMonth = dto.BillingMonth,
+                BillingYear = dto.BillingYear,
                 InvoiceItems = itemDrafts.Select(d => new InvoiceItem
                 {
                     Description = d.Description,
@@ -190,6 +192,8 @@ namespace RodcastInvoiceApp.Web.Services
             invoice.VacationDays = dto.VacationDays;
             invoice.WorkedDays = dto.WorkedDays;
             invoice.OvertimeHoursToInvoice = dto.OvertimeHoursToInvoice;
+            invoice.BillingMonth = dto.BillingMonth;
+            invoice.BillingYear = dto.BillingYear;
 
             // Reemplaza las lineas con las recalculadas (las viejas ya no aplican).
             _context.InvoiceItems.RemoveRange(invoice.InvoiceItems);
@@ -269,6 +273,18 @@ namespace RodcastInvoiceApp.Web.Services
             return payment.Adapt<PaymentResponseDto>();
         }
 
+        public async Task<bool> HasInvoiceForBillingPeriodAsync(
+            int projectId, int billingMonth, int billingYear, int? excludeInvoiceId = null)
+        {
+            var query = _context.Invoices.Where(i =>
+                i.ProjectId == projectId && i.BillingMonth == billingMonth && i.BillingYear == billingYear);
+
+            if (excludeInvoiceId is not null)
+                query = query.Where(i => i.Id != excludeInvoiceId);
+
+            return await query.AnyAsync();
+        }
+
         private async Task EnsureInvoiceNumberIsUniqueAsync(string invoiceNumber, int? excludeInvoiceId = null)
         {
             var query = _context.Invoices.Where(i => i.InvoiceNumber == invoiceNumber);
@@ -284,10 +300,15 @@ namespace RodcastInvoiceApp.Web.Services
             switch (billingType)
             {
                 case BillingType.MonthlyRetainer:
+                    if (dto.BillingMonth is < 1 or > 12)
+                        throw new BadRequestException(_loc["SvcErr_BillingMonthRequired"]);
+
                     return new MonthlyRetainerInput
                     {
-                        Month = dto.InvoiceDate.Month,
-                        Year = dto.InvoiceDate.Year,
+                        Month = dto.BillingMonth,
+                        Year = dto.BillingYear,
+                        OvertimeMonth = dto.InvoiceDate.Month,
+                        OvertimeYear = dto.InvoiceDate.Year,
                         VacationDays = dto.VacationDays,
                         WorkedDays = dto.WorkedDays,
                         OvertimeHoursToInvoice = dto.OvertimeHoursToInvoice
@@ -361,6 +382,8 @@ namespace RodcastInvoiceApp.Web.Services
                 VacationDays = invoice.VacationDays,
                 WorkedDays = invoice.WorkedDays,
                 OvertimeHoursToInvoice = invoice.OvertimeHoursToInvoice,
+                BillingMonth = invoice.BillingMonth,
+                BillingYear = invoice.BillingYear,
                 HasTimesheet = invoice.TimesheetExceptions is not null,
                 // El motivo solo se muestra si la ULTIMA solicitud de esta factura fue
                 // un rechazo: si ya se volvio a pedir el envio, esa solicitud nueva

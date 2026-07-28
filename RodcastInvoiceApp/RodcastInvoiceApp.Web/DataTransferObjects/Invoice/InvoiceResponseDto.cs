@@ -36,6 +36,8 @@ namespace RodcastInvoiceApp.Web.DataTransferObjects.Invoice
         public int VacationDays { get; set; }
         public int WorkedDays { get; set; }
         public decimal OvertimeHoursToInvoice { get; set; }
+        public int BillingMonth { get; set; }
+        public int BillingYear { get; set; }
 
         // True si ya se guardo un timesheet para esta factura al menos una vez
         // (aunque sea sin ninguna excepcion, todo "Present").

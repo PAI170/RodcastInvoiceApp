@@ -262,6 +262,10 @@
   <data name="NewInvoice_VatExonerated" xml:space="preserve"><value>Exonerado de IVA</value></data>
   <data name="NewInvoice_PaymentMethodOptional" xml:space="preserve"><value>Método de pago (opcional)</value></data>
   <data name="NewInvoice_MonthlyRetainerTitle" xml:space="preserve"><value>Datos del mes (Retainer mensual)</value></data>
+  <data name="NewInvoice_BillingMonth" xml:space="preserve"><value>Mes que se factura</value></data>
+  <data name="NewInvoice_BillingYear" xml:space="preserve"><value>Año que se factura</value></data>
+  <data name="NewInvoice_BillingMonthHelp" xml:space="preserve"><value>Independiente de la fecha de factura de arriba — ej. emitís la factura el 28 de julio para el retainer de agosto.</value></data>
+  <data name="NewInvoice_BillingPeriodWarning" xml:space="preserve"><value>Este proyecto ya tiene una factura para {0} {1}.</value></data>
   <data name="NewInvoice_VacationDays" xml:space="preserve"><value>Días de vacaciones</value></data>
   <data name="NewInvoice_WorkedDays" xml:space="preserve"><value>Días trabajados</value></data>
   <data name="NewInvoice_OvertimeHoursPrevMonth" xml:space="preserve"><value>Horas extra a facturar (mes anterior)</value></data>
@@ -331,6 +335,7 @@
   <data name="SvcErr_ApprovalNotFound" xml:space="preserve"><value>Solicitud de aprobación no encontrada.</value></data>
   <data name="SvcErr_ApprovalAlreadyReviewed" xml:space="preserve"><value>Esta solicitud ya fue revisada.</value></data>
   <data name="SvcErr_Forbidden" xml:space="preserve"><value>No tenés permiso para realizar esta acción.</value></data>
+  <data name="SvcErr_BillingMonthRequired" xml:space="preserve"><value>Seleccioná el mes que estás facturando.</value></data>
 
   <!-- Validators (FluentValidation) -->
   <data name="Val_MaxLength" xml:space="preserve"><value>No puede superar {0} caracteres.</value></data>

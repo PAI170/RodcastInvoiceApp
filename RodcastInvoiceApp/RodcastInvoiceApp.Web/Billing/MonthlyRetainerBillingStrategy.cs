@@ -59,9 +59,11 @@ namespace RodcastInvoiceApp.Web.Billing
 
             if (monthlyInput.OvertimeHoursToInvoice > 0)
             {
-                // La extra se factura el mismo mes en que se trabajo (la factura se genera
-                // a fin de mes, ej. 28 de mayo, ya con la extra de mayo incluida). Lo que cae
-                // en el mes siguiente es solo la fecha de pago, no el mes de la linea.
+                // La extra se factura el mismo mes en que se trabajo (fecha de la factura),
+                // no el mes que se factura por adelantado en la linea de arriba - pueden
+                // ser meses distintos (ej. factura de Agosto emitida el 28 de Julio, con
+                // la extra de Julio incluida).
+                var overtimeMonthLabel = $"{MonthNames[monthlyInput.OvertimeMonth - 1]} {monthlyInput.OvertimeYear}";
                 var overtimeRate = Math.Round(
                     config.HourlyRate * config.OvertimeMultiplier, 2, MidpointRounding.AwayFromZero);
                 var overtimeAmount = Math.Round(
@@ -69,7 +71,7 @@ namespace RodcastInvoiceApp.Web.Billing
 
                 items.Add(new InvoiceItemDraft
                 {
-                    Description = $"Overtime ({monthLabel})",
+                    Description = $"Overtime ({overtimeMonthLabel})",
                     Quantity = monthlyInput.OvertimeHoursToInvoice,
                     Unit = "hours",
                     Rate = overtimeRate,
