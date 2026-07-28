@@ -121,6 +121,14 @@ namespace RodcastInvoiceApp.Web.Data
                 .Property(a => a.Status)
                 .HasConversion<string>()
                 .HasMaxLength(10);
+
+            // No se puede borrar un usuario que mando una factura (queda el historial,
+            // y hace falta para saber de que buzon reintentar el guardado en Sent).
+            modelBuilder.Entity<Invoice>()
+                .HasOne(i => i.SentByUser)
+                .WithMany()
+                .HasForeignKey(i => i.SentByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

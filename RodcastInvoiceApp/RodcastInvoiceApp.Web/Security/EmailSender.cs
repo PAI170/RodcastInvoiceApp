@@ -28,6 +28,14 @@ namespace RodcastInvoiceApp.Web.Security
         Task SendAsync(
             SmtpCredentials credentials, string toEmail, IEnumerable<string> ccEmails, string subject,
             string body, string? signatureHtml, IEnumerable<EmailAttachment> attachments);
+
+        // Guarda (o re-guarda) una copia en "Sent" via IMAP sin mandar nada por SMTP.
+        // A diferencia del guardado best-effort de SendAsync, esto SI deja que la
+        // excepcion se propague: lo llama una accion manual del admin que necesita
+        // saber si funciono o no, no un envio automatico que no se debe interrumpir.
+        Task SaveCopyToSentAsync(
+            SmtpCredentials credentials, string toEmail, IEnumerable<string> ccEmails, string subject,
+            string body, string? signatureHtml, IEnumerable<EmailAttachment> attachments);
     }
 
     public class MailKitEmailSender : IEmailSender
@@ -36,28 +44,7 @@ namespace RodcastInvoiceApp.Web.Security
             SmtpCredentials credentials, string toEmail, IEnumerable<string> ccEmails, string subject,
             string body, string? signatureHtml, IEnumerable<EmailAttachment> attachments)
         {
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(credentials.FromDisplayName, credentials.Username));
-            message.To.Add(MailboxAddress.Parse(toEmail));
-            foreach (var cc in ccEmails)
-                message.Cc.Add(MailboxAddress.Parse(cc));
-            message.Subject = subject;
-
-            // MailKit no pasa por ningun cliente de correo (Outlook, Gmail, etc.), asi que
-            // la firma no se agrega sola: EmailHtmlRenderer arma el HtmlBody con el mensaje
-            // mas la firma. Misma funcion que usa la pantalla de aprobaciones para la vista
-            // previa, para que el admin vea exactamente lo que se va a mandar.
-            var bodyBuilder = new BodyBuilder { TextBody = body };
-            if (!string.IsNullOrWhiteSpace(signatureHtml))
-                bodyBuilder.HtmlBody = EmailHtmlRenderer.BuildHtmlBody(body, signatureHtml);
-
-            foreach (var attachment in attachments)
-            {
-                bodyBuilder.Attachments.Add(
-                    attachment.FileName, attachment.Content, ContentType.Parse(attachment.ContentType));
-            }
-
-            message.Body = bodyBuilder.ToMessageBody();
+            var message = BuildMessage(credentials, toEmail, ccEmails, subject, body, signatureHtml, attachments);
 
             using (var smtpClient = new SmtpClient())
             {
@@ -86,8 +73,48 @@ namespace RodcastInvoiceApp.Web.Security
             }
         }
 
+        public Task SaveCopyToSentAsync(
+            SmtpCredentials credentials, string toEmail, IEnumerable<string> ccEmails, string subject,
+            string body, string? signatureHtml, IEnumerable<EmailAttachment> attachments)
+        {
+            var message = BuildMessage(credentials, toEmail, ccEmails, subject, body, signatureHtml, attachments);
+            return AppendToSentAsync(credentials, message);
+        }
+
+        private static MimeMessage BuildMessage(
+            SmtpCredentials credentials, string toEmail, IEnumerable<string> ccEmails, string subject,
+            string body, string? signatureHtml, IEnumerable<EmailAttachment> attachments)
+        {
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(credentials.FromDisplayName, credentials.Username));
+            message.To.Add(MailboxAddress.Parse(toEmail));
+            foreach (var cc in ccEmails)
+                message.Cc.Add(MailboxAddress.Parse(cc));
+            message.Subject = subject;
+
+            // MailKit no pasa por ningun cliente de correo (Outlook, Gmail, etc.), asi que
+            // la firma no se agrega sola: EmailHtmlRenderer arma el HtmlBody con el mensaje
+            // mas la firma. Misma funcion que usa la pantalla de aprobaciones para la vista
+            // previa, para que el admin vea exactamente lo que se va a mandar.
+            var bodyBuilder = new BodyBuilder { TextBody = body };
+            if (!string.IsNullOrWhiteSpace(signatureHtml))
+                bodyBuilder.HtmlBody = EmailHtmlRenderer.BuildHtmlBody(body, signatureHtml);
+
+            foreach (var attachment in attachments)
+            {
+                bodyBuilder.Attachments.Add(
+                    attachment.FileName, attachment.Content, ContentType.Parse(attachment.ContentType));
+            }
+
+            message.Body = bodyBuilder.ToMessageBody();
+            return message;
+        }
+
         private static async Task AppendToSentAsync(SmtpCredentials credentials, MimeMessage message)
         {
+            if (credentials.ImapPort is not > 0)
+                throw new InvalidOperationException("IMAP port not configured for this sender.");
+
             using var imapClient = new ImapClient();
             await imapClient.ConnectAsync(credentials.Host, credentials.ImapPort!.Value, SecureSocketOptions.Auto);
             await imapClient.AuthenticateAsync(credentials.Username, credentials.Password);

@@ -249,6 +249,9 @@
   <data name="InvoiceDetail_TimesheetMissingBody" xml:space="preserve"><value>Todavía no generaste el timesheet de esta factura. Generalo antes de enviar el correo, para que quede adjunto junto con la factura.</value></data>
   <data name="InvoiceDetail_EmailSentToApproval" xml:space="preserve"><value>Correo enviado a aprobación. Un admin lo va a revisar antes de que salga.</value></data>
   <data name="InvoiceDetail_EmailSent" xml:space="preserve"><value>Correo enviado.</value></data>
+  <data name="InvoiceDetail_RetrySentCopy" xml:space="preserve"><value>Reintentar guardado en Sent</value></data>
+  <data name="InvoiceDetail_RetrySentCopySuccess" xml:space="preserve"><value>Se guardó en tu carpeta Enviados.</value></data>
+  <data name="InvoiceDetail_RetrySentCopyError" xml:space="preserve"><value>No se pudo guardar en Enviados. Revisá la configuración IMAP en "Ajustes".</value></data>
   <data name="InvoiceDetail_EmailSendError" xml:space="preserve"><value>No se pudo enviar el correo. Revisá los datos en "Ajustes" e intentá de nuevo.</value></data>
 
   <!-- NewInvoice -->
@@ -330,6 +333,8 @@
   <data name="SvcErr_TimesheetInvalidDay" xml:space="preserve"><value>El día {0} no es válido para este mes.</value></data>
   <data name="SvcErr_TimesheetWeekend" xml:space="preserve"><value>El día {0} es fin de semana, no se puede marcar.</value></data>
   <data name="SvcErr_EmailSenderNotConfigured" xml:space="preserve"><value>Configurá tu correo en "Ajustes" antes de poder enviar facturas.</value></data>
+  <data name="SvcErr_InvoiceNotSentYet" xml:space="preserve"><value>Esta factura todavía no se mandó.</value></data>
+  <data name="SvcErr_ImapNotConfigured" xml:space="preserve"><value>Quien la mandó originalmente no tiene un puerto IMAP configurado en "Ajustes".</value></data>
   <data name="SvcErr_ClientNoEmail" xml:space="preserve"><value>El cliente no tiene un email configurado.</value></data>
   <data name="SvcErr_TimesheetNotGenerated" xml:space="preserve"><value>Todavía no generaste el timesheet de esta factura.</value></data>
   <data name="SvcErr_ApprovalAlreadyPending" xml:space="preserve"><value>Esta factura ya tiene un envío pendiente de aprobación.</value></data>

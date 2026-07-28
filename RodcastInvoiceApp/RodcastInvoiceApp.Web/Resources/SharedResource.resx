@@ -249,6 +249,9 @@
   <data name="InvoiceDetail_TimesheetMissingBody" xml:space="preserve"><value>You haven't generated this invoice's timesheet yet. Generate it before sending the email, so it goes attached along with the invoice.</value></data>
   <data name="InvoiceDetail_EmailSentToApproval" xml:space="preserve"><value>Email sent for approval. An admin will review it before it goes out.</value></data>
   <data name="InvoiceDetail_EmailSent" xml:space="preserve"><value>Email sent.</value></data>
+  <data name="InvoiceDetail_RetrySentCopy" xml:space="preserve"><value>Retry Sent copy</value></data>
+  <data name="InvoiceDetail_RetrySentCopySuccess" xml:space="preserve"><value>Saved to your Sent folder.</value></data>
+  <data name="InvoiceDetail_RetrySentCopyError" xml:space="preserve"><value>Couldn't save to Sent. Check the IMAP settings in "Settings".</value></data>
   <data name="InvoiceDetail_EmailSendError" xml:space="preserve"><value>Couldn't send the email. Check your details in "Settings" and try again.</value></data>
 
   <!-- NewInvoice -->
@@ -330,6 +333,8 @@
   <data name="SvcErr_TimesheetInvalidDay" xml:space="preserve"><value>Day {0} is not valid for this month.</value></data>
   <data name="SvcErr_TimesheetWeekend" xml:space="preserve"><value>Day {0} is a weekend, it can't be marked.</value></data>
   <data name="SvcErr_EmailSenderNotConfigured" xml:space="preserve"><value>Set up your email in "Settings" before you can send invoices.</value></data>
+  <data name="SvcErr_InvoiceNotSentYet" xml:space="preserve"><value>This invoice hasn't been sent yet.</value></data>
+  <data name="SvcErr_ImapNotConfigured" xml:space="preserve"><value>The original sender doesn't have an IMAP port configured in "Settings".</value></data>
   <data name="SvcErr_ClientNoEmail" xml:space="preserve"><value>The client doesn't have an email set up.</value></data>
   <data name="SvcErr_TimesheetNotGenerated" xml:space="preserve"><value>You haven't generated this invoice's timesheet yet.</value></data>
   <data name="SvcErr_ApprovalAlreadyPending" xml:space="preserve"><value>This invoice already has a submission pending approval.</value></data>

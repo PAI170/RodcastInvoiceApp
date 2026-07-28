@@ -117,6 +117,16 @@ else
         {
             <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowEmailPreview">@Loc["InvoiceDetail_SendEmail"]</button>
         }
+        @if (invoice.Status is InvoiceStatus.Sent or InvoiceStatus.Paid)
+        {
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" disabled="@isRetryingSentCopy" @onclick="HandleRetrySentCopy">
+                        @Loc["InvoiceDetail_RetrySentCopy"]
+                    </button>
+                </Authorized>
+            </AuthorizeView>
+        }
         @if (invoice.HasTimesheet)
         {
             <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowTimesheetPreview">@Loc["InvoiceDetail_ViewTimesheet"]</button>
@@ -255,6 +265,7 @@ else
     private InvoiceEmailPreviewDto? emailPreview;
     private bool showTimesheetWarning;
     private bool showRejectionReason;
+    private bool isRetryingSentCopy;
 
     private void ShowPdfPreview(string url, string title)
     {
@@ -338,6 +349,35 @@ else
         finally
         {
             isSendingEmail = false;
+        }
+    }
+
+    private async Task HandleRetrySentCopy()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser is null)
+            return;
+
+        isRetryingSentCopy = true;
+        try
+        {
+            await InvoiceEmailService.RetrySentFolderCopyAsync(InvoiceId, currentUser);
+            successMessage = Loc["InvoiceDetail_RetrySentCopySuccess"];
+        }
+        catch (Exception ex) when (ex is BadRequestException or NotFoundException or ForbiddenException)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (Exception)
+        {
+            errorMessage = Loc["InvoiceDetail_RetrySentCopyError"];
+        }
+        finally
+        {
+            isRetryingSentCopy = false;
         }
     }
 

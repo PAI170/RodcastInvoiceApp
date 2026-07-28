@@ -96,5 +96,11 @@ namespace RodcastInvoiceApp.Web.Data.Models
         public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
         public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
         public virtual ICollection<InvoiceEmailApproval> EmailApprovals { get; set; } = new List<InvoiceEmailApproval>();
+
+        // Quien la mando de verdad (cuyas credenciales SMTP se usaron), sea porque
+        // el Admin mando directo o porque se aprobo un pedido de otro usuario. Sin
+        // esto no hay forma de saber de que buzon reintentar el guardado en Sent.
+        public string? SentByUserId { get; set; }
+        public virtual ApplicationUser? SentByUser { get; set; }
     }
 }
