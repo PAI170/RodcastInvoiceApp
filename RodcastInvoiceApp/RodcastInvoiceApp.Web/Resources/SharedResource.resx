@@ -113,6 +113,7 @@
   <data name="Nav_BankAccounts" xml:space="preserve"><value>Bank Accounts</value></data>
   <data name="Nav_CompanySettings" xml:space="preserve"><value>Company Details</value></data>
   <data name="Nav_Approvals" xml:space="preserve"><value>Approvals</value></data>
+  <data name="Nav_Audit" xml:space="preserve"><value>Audit log</value></data>
   <data name="Nav_Invoices" xml:space="preserve"><value>Invoices</value></data>
   <data name="Nav_Users" xml:space="preserve"><value>Users</value></data>
   <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
@@ -252,6 +253,16 @@
   <data name="InvoiceDetail_RetrySentCopy" xml:space="preserve"><value>Retry Sent copy</value></data>
   <data name="InvoiceDetail_RetrySentCopySuccess" xml:space="preserve"><value>Saved to your Sent folder.</value></data>
   <data name="InvoiceDetail_RetrySentCopyError" xml:space="preserve"><value>Couldn't save to Sent. Check the IMAP settings in "Settings".</value></data>
+  <data name="Audit_Title" xml:space="preserve"><value>Audit log</value></data>
+  <data name="Audit_InvoicesSection" xml:space="preserve"><value>Invoices created</value></data>
+  <data name="Audit_NoInvoices" xml:space="preserve"><value>No invoices yet.</value></data>
+  <data name="Audit_CreatedBy" xml:space="preserve"><value>Created by</value></data>
+  <data name="Audit_UnknownUser" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Audit_EmailsSection" xml:space="preserve"><value>Emails sent</value></data>
+  <data name="Audit_NoEmails" xml:space="preserve"><value>No emails sent yet.</value></data>
+  <data name="Audit_SentBy" xml:space="preserve"><value>Sent by</value></data>
+  <data name="Audit_SavedToSent" xml:space="preserve"><value>Saved to Sent</value></data>
+  <data name="Audit_WasRetry" xml:space="preserve"><value>Manual retry</value></data>
   <data name="InvoiceDetail_EmailSendError" xml:space="preserve"><value>Couldn't send the email. Check your details in "Settings" and try again.</value></data>
 
   <!-- NewInvoice -->

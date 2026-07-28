@@ -25,7 +25,9 @@ namespace RodcastInvoiceApp.Web.Security
 
     public interface IEmailSender
     {
-        Task SendAsync(
+        // Devuelve si la copia en "Sent" se guardo bien (para el log de auditoria).
+        // El correo se manda igual por SMTP sin importar este resultado.
+        Task<bool> SendAsync(
             SmtpCredentials credentials, string toEmail, IEnumerable<string> ccEmails, string subject,
             string body, string? signatureHtml, IEnumerable<EmailAttachment> attachments);
 
@@ -40,7 +42,7 @@ namespace RodcastInvoiceApp.Web.Security
 
     public class MailKitEmailSender : IEmailSender
     {
-        public async Task SendAsync(
+        public async Task<bool> SendAsync(
             SmtpCredentials credentials, string toEmail, IEnumerable<string> ccEmails, string subject,
             string body, string? signatureHtml, IEnumerable<EmailAttachment> attachments)
         {
@@ -66,11 +68,15 @@ namespace RodcastInvoiceApp.Web.Security
                 try
                 {
                     await AppendToSentAsync(credentials, message);
+                    return true;
                 }
                 catch
                 {
+                    return false;
                 }
             }
+
+            return false;
         }
 
         public Task SaveCopyToSentAsync(

@@ -21,6 +21,7 @@ namespace RodcastInvoiceApp.Web.Data
         public DbSet<InvoiceItem> InvoiceItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<InvoiceEmailApproval> InvoiceEmailApprovals { get; set; }
+        public DbSet<InvoiceEmailLog> InvoiceEmailLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -128,6 +129,27 @@ namespace RodcastInvoiceApp.Web.Data
                 .HasOne(i => i.SentByUser)
                 .WithMany()
                 .HasForeignKey(i => i.SentByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Idem para quien creo la factura (log de auditoria).
+            modelBuilder.Entity<Invoice>()
+                .HasOne(i => i.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(i => i.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // El historial de envios es parte de la factura: se borra con ella.
+            modelBuilder.Entity<InvoiceEmailLog>()
+                .HasOne(l => l.Invoice)
+                .WithMany(i => i.EmailLogs)
+                .HasForeignKey(l => l.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // No se puede borrar un usuario que aparece en el historial de envios.
+            modelBuilder.Entity<InvoiceEmailLog>()
+                .HasOne(l => l.SentByUser)
+                .WithMany()
+                .HasForeignKey(l => l.SentByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
 

@@ -154,6 +154,7 @@ builder.Services.AddScoped<IInvoicePdfService, InvoicePdfService>();
 builder.Services.AddScoped<ITimesheetService, TimesheetService>();
 builder.Services.AddScoped<IInvoiceEmailService, InvoiceEmailService>();
 builder.Services.AddScoped<IInvoiceEmailApprovalService, InvoiceEmailApprovalService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 
 // Billing strategies: cada una se registra por separado y se resuelven todas
 // como IEnumerable<IBillingStrategy> en InvoiceService.

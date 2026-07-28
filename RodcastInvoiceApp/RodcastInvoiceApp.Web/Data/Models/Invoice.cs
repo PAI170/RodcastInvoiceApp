@@ -102,5 +102,12 @@ namespace RodcastInvoiceApp.Web.Data.Models
         // esto no hay forma de saber de que buzon reintentar el guardado en Sent.
         public string? SentByUserId { get; set; }
         public virtual ApplicationUser? SentByUser { get; set; }
+
+        // Quien la creo (para el log de auditoria). Null en facturas de antes de
+        // que existiera este campo.
+        public string? CreatedByUserId { get; set; }
+        public virtual ApplicationUser? CreatedByUser { get; set; }
+
+        public virtual ICollection<InvoiceEmailLog> EmailLogs { get; set; } = new List<InvoiceEmailLog>();
     }
 }

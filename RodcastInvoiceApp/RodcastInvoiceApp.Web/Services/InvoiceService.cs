@@ -120,6 +120,7 @@ namespace RodcastInvoiceApp.Web.Services
                 OvertimeHoursToInvoice = dto.OvertimeHoursToInvoice,
                 BillingMonth = dto.BillingMonth,
                 BillingYear = dto.BillingYear,
+                CreatedByUserId = await _currentUser.GetUserIdAsync(),
                 InvoiceItems = itemDrafts.Select(d => new InvoiceItem
                 {
                     Description = d.Description,

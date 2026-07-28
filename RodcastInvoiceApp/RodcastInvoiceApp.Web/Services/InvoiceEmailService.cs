@@ -108,7 +108,7 @@ namespace RodcastInvoiceApp.Web.Services
                 FromDisplayName = sender.DisplayName
             };
 
-            await _emailSender.SendAsync(
+            var savedToSent = await _emailSender.SendAsync(
                 credentials, invoice.ClientEmail!, FixedCcRecipients, BuildSubject(invoice.InvoiceNumber),
                 BuildBody(invoice.InvoiceNumber), sender.EmailSignatureHtml, attachments);
 
@@ -118,6 +118,16 @@ namespace RodcastInvoiceApp.Web.Services
             // "Reintentar guardado en Sent" para saber que buzon usar despues.
             var invoiceEntity = await _context.Invoices.FirstAsync(i => i.Id == invoiceId);
             invoiceEntity.SentByUserId = sender.Id;
+
+            _context.InvoiceEmailLogs.Add(new InvoiceEmailLog
+            {
+                InvoiceId = invoiceId,
+                SentByUserId = sender.Id,
+                ToEmail = invoice.ClientEmail!,
+                SavedToSentFolder = savedToSent,
+                IsRetry = false
+            });
+
             await _context.SaveChangesAsync();
 
             return result;
@@ -165,6 +175,18 @@ namespace RodcastInvoiceApp.Web.Services
             await _emailSender.SaveCopyToSentAsync(
                 credentials, invoice.ClientEmail!, FixedCcRecipients, BuildSubject(invoice.InvoiceNumber),
                 BuildBody(invoice.InvoiceNumber), sender.EmailSignatureHtml, attachments);
+
+            // Si SaveCopyToSentAsync tiro excepcion no llegamos aca - no se loguea
+            // un reintento fallido, el admin ya se entera por el mensaje de error.
+            _context.InvoiceEmailLogs.Add(new InvoiceEmailLog
+            {
+                InvoiceId = invoiceId,
+                SentByUserId = sender.Id,
+                ToEmail = invoice.ClientEmail!,
+                SavedToSentFolder = true,
+                IsRetry = true
+            });
+            await _context.SaveChangesAsync();
         }
 
         // Prioridad: 1) quien realmente la mando (guardado en SendAsync), 2) para

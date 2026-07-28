@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.Data.Models;
@@ -16,6 +17,7 @@ namespace RodcastInvoiceApp.Web.Security
     {
         Task<bool> IsAdminAsync();
         Task EnsureAdminAsync();
+        Task<string?> GetUserIdAsync();
     }
 
     public class CurrentUserAccessor : ICurrentUserAccessor
@@ -40,6 +42,12 @@ namespace RodcastInvoiceApp.Web.Security
         {
             if (!await IsAdminAsync())
                 throw new ForbiddenException(_loc["SvcErr_Forbidden"]);
+        }
+
+        public async Task<string?> GetUserIdAsync()
+        {
+            var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+            return authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
     }
 }

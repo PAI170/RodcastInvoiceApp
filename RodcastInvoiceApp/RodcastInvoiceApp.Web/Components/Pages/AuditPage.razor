@@ -1,0 +1,102 @@
+@page "/auditoria"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using Microsoft.Extensions.Localization
+@using RodcastInvoiceApp.Web.Data.Models
+@using RodcastInvoiceApp.Web.DataTransferObjects.Audit
+@using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Resources
+@inject IAuditService AuditService
+@inject IStringLocalizer<SharedResource> Loc
+
+<PageTitle>@Loc["Audit_Title"]</PageTitle>
+
+<h1>@Loc["Audit_Title"]</h1>
+
+<h2 class="h5 mt-4">@Loc["Audit_InvoicesSection"]</h2>
+@if (invoiceLog is null)
+{
+    <p><em>@Loc["Common_Loading"]</em></p>
+}
+else if (invoiceLog.Count == 0)
+{
+    <p>@Loc["Audit_NoInvoices"]</p>
+}
+else
+{
+    <div class="table-responsive">
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>@Loc["Field_Invoice"]</th>
+                <th>@Loc["Field_Client"]</th>
+                <th>@Loc["Audit_CreatedBy"]</th>
+                <th>@Loc["Field_Date"]</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in invoiceLog)
+            {
+                <tr>
+                    <td><a href="@($"/invoices/{item.InvoiceId}")">@item.InvoiceNumber</a></td>
+                    <td>@item.ClientName</td>
+                    <td>@(item.CreatedByName ?? Loc["Audit_UnknownUser"])</td>
+                    <td>@item.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+}
+
+<h2 class="h5 mt-4">@Loc["Audit_EmailsSection"]</h2>
+@if (emailLog is null)
+{
+    <p><em>@Loc["Common_Loading"]</em></p>
+}
+else if (emailLog.Count == 0)
+{
+    <p>@Loc["Audit_NoEmails"]</p>
+}
+else
+{
+    <div class="table-responsive">
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>@Loc["Field_Invoice"]</th>
+                <th>@Loc["Field_Client"]</th>
+                <th>@Loc["Audit_SentBy"]</th>
+                <th>@Loc["Email_To"]</th>
+                <th>@Loc["Field_Date"]</th>
+                <th>@Loc["Audit_SavedToSent"]</th>
+                <th>@Loc["Audit_WasRetry"]</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in emailLog)
+            {
+                <tr>
+                    <td><a href="@($"/invoices/{item.InvoiceId}")">@item.InvoiceNumber</a></td>
+                    <td>@item.ClientName</td>
+                    <td>@item.SentByName</td>
+                    <td>@item.ToEmail</td>
+                    <td>@item.SentAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@(item.SavedToSentFolder ? Loc["Common_Yes"] : Loc["Common_No"])</td>
+                    <td>@(item.IsRetry ? Loc["Common_Yes"] : Loc["Common_No"])</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+}
+
+@code {
+    private List<InvoiceCreationLogDto>? invoiceLog;
+    private List<InvoiceEmailLogDto>? emailLog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        invoiceLog = await AuditService.GetInvoiceCreationLogAsync();
+        emailLog = await AuditService.GetEmailSendLogAsync();
+    }
+}
