@@ -4,14 +4,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copiar solo el .csproj primero: Docker cachea esta capa y no vuelve a
-# restaurar paquetes NuGet a menos que el .csproj cambie.
-COPY RodcastInvoiceApp/RodcastInvoiceApp.Web/RodcastInvoiceApp.Web.csproj RodcastInvoiceApp/RodcastInvoiceApp.Web/
-RUN dotnet restore RodcastInvoiceApp/RodcastInvoiceApp.Web/RodcastInvoiceApp.Web.csproj
-
+# Restore y publish en un solo paso: con el .csproj copiado por separado
+# (restore aislado + publish --no-restore) el SDK no generaba bien los
+# static web assets del framework (blazor.web.js quedaba fuera de
+# /app/publish/wwwroot/_framework). Se pierde algo de cacheo de capas
+# (cualquier cambio de codigo repite el restore de NuGet), pero es el
+# precio de que el build sea confiable.
 COPY RodcastInvoiceApp/RodcastInvoiceApp.Web/ RodcastInvoiceApp/RodcastInvoiceApp.Web/
 RUN dotnet publish RodcastInvoiceApp/RodcastInvoiceApp.Web/RodcastInvoiceApp.Web.csproj \
-    -c Release -o /app/publish --no-restore
+    -c Release -o /app/publish
 
 # --- Runtime ---
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
