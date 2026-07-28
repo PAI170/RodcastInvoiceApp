@@ -50,8 +50,15 @@ builder.Services.AddHttpClient<ITurnstileVerifier, TurnstileVerifier>();
 // Base de datos (MariaDB via Pomelo).
 // Version fija (no AutoDetect) para que "dotnet ef migrations add" funcione
 // sin necesitar una conexion real. Ajustar al version real de tu MariaDB en CloudPanel.
+// AddDbContextFactory (no AddDbContext a secas): sigue registrando AppDbContext
+// como scoped de siempre para los Services existentes, pero ADEMAS deja pedir
+// IDbContextFactory<AppDbContext> donde haga falta un contexto propio,
+// independiente del compartido por el circuito. Se necesita en NavMenu.razor
+// (la campanita de aprobaciones consulta la base en paralelo con lo que sea que
+// la pagina actual tambien este consultando - dos operaciones concurrentes sobre
+// el mismo DbContext tiran "A second operation was started on this context...").
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseMySql(connectionString, new MariaDbServerVersion(new Version(10, 6, 0))));
 
 // Data Protection: sin persistir la clave, un reinicio del contenedor invalida

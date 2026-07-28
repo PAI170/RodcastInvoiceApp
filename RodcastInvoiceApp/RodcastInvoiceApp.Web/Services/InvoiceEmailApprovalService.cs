@@ -13,6 +13,7 @@ namespace RodcastInvoiceApp.Web.Services
     public class InvoiceEmailApprovalService : IInvoiceEmailApprovalService
     {
         private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly IInvoiceService _invoiceService;
         private readonly IInvoiceEmailService _invoiceEmailService;
         private readonly ICurrentUserAccessor _currentUser;
@@ -20,12 +21,14 @@ namespace RodcastInvoiceApp.Web.Services
 
         public InvoiceEmailApprovalService(
             AppDbContext context,
+            IDbContextFactory<AppDbContext> contextFactory,
             IInvoiceService invoiceService,
             IInvoiceEmailService invoiceEmailService,
             ICurrentUserAccessor currentUser,
             IStringLocalizer<SharedResource> loc)
         {
             _context = context;
+            _contextFactory = contextFactory;
             _invoiceService = invoiceService;
             _invoiceEmailService = invoiceEmailService;
             _currentUser = currentUser;
@@ -60,7 +63,12 @@ namespace RodcastInvoiceApp.Web.Services
         {
             await _currentUser.EnsureAdminAsync();
 
-            return await _context.InvoiceEmailApprovals
+            // Contexto propio (no el compartido _context): esto lo llama NavMenu en
+            // cada pagina, al mismo tiempo que esa pagina hace sus propias consultas
+            // con el DbContext del circuito - dos operaciones concurrentes sobre el
+            // mismo DbContext tiran excepcion (no es thread-safe).
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.InvoiceEmailApprovals
                 .CountAsync(a => a.Status == EmailApprovalStatus.Pending);
         }
 
