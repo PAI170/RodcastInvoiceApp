@@ -29,7 +29,13 @@ builder.Services.AddRazorComponents()
 // controla formato de numeros/fechas queda fija en en-US siempre, sin importar
 // el idioma elegido - asi los montos en pantalla y en el PDF de facturas/timesheets
 // nunca cambian de formato (1234.56, nunca 1234,56) al tocar el switch ES/ENG.
-builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+//
+// Sin ResourcesPath: SharedResource.cs ya vive en la carpeta/namespace "Resources"
+// (RodcastInvoiceApp.Web.Resources.SharedResource). Si se configura ResourcesPath
+// = "Resources" aca, el localizador busca el recurso duplicando la carpeta
+// (...Resources.Resources.SharedResource), no lo encuentra, y devuelve la clave
+// cruda ("Nav_Settings") en vez del texto traducido.
+builder.Services.AddLocalization();
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
     options.DefaultRequestCulture = new RequestCulture(culture: "en-US", uiCulture: "en");
