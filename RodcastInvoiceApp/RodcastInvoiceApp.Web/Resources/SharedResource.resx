@@ -196,6 +196,8 @@
   <data name="Settings_SmtpSection" xml:space="preserve"><value>Email (SMTP)</value></data>
   <data name="Settings_Host" xml:space="preserve"><value>SMTP server (host)</value></data>
   <data name="Settings_Port" xml:space="preserve"><value>Port</value></data>
+  <data name="Settings_ImapPort" xml:space="preserve"><value>IMAP port</value></data>
+  <data name="Settings_ImapPortHelp" xml:space="preserve"><value>Used to save a copy of sent emails in your "Sent" folder (usually 993).</value></data>
   <data name="Settings_YourEmail" xml:space="preserve"><value>Your email</value></data>
   <data name="Settings_Password" xml:space="preserve"><value>Password</value></data>
   <data name="Settings_PasswordHelp" xml:space="preserve"><value>Leave blank to keep it unchanged.</value></data>

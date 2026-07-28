@@ -43,6 +43,11 @@ else
                 <label class="form-label">@Loc["Settings_Port"]</label>
                 <InputNumber class="form-control" @bind-Value="model.Port" />
             </div>
+            <div class="col-md-4">
+                <label class="form-label">@Loc["Settings_ImapPort"]</label>
+                <InputNumber class="form-control" @bind-Value="model.ImapPort" />
+                <div class="form-text">@Loc["Settings_ImapPortHelp"]</div>
+            </div>
             <div class="col-md-8">
                 <label class="form-label">@Loc["Settings_YourEmail"]</label>
                 <InputText class="form-control" type="email" placeholder="tu@tudominio.com" @bind-Value="model.Username" />
@@ -98,6 +103,7 @@ else
         {
             Host = currentUser.SmtpHost ?? string.Empty,
             Port = currentUser.SmtpPort ?? 465,
+            ImapPort = currentUser.ImapPort ?? 993,
             Username = currentUser.SmtpUsername ?? currentUser.Email ?? string.Empty,
             SignatureHtml = currentUser.EmailSignatureHtml ?? string.Empty
         };
@@ -119,6 +125,7 @@ else
         {
             currentUser.SmtpHost = model.Host;
             currentUser.SmtpPort = model.Port;
+            currentUser.ImapPort = model.ImapPort;
             currentUser.SmtpUsername = model.Username;
             currentUser.EmailSignatureHtml = string.IsNullOrWhiteSpace(model.SignatureHtml) ? null : model.SignatureHtml;
 
@@ -146,6 +153,7 @@ else
     {
         public string Host { get; set; } = string.Empty;
         public int Port { get; set; } = 465;
+        public int ImapPort { get; set; } = 993;
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string SignatureHtml { get; set; } = string.Empty;

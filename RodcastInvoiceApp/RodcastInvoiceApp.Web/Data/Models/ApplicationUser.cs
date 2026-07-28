@@ -14,6 +14,12 @@ namespace RodcastInvoiceApp.Web.Data.Models
         public string? SmtpUsername { get; set; }
         public string? SmtpPasswordProtected { get; set; }
 
+        // Puerto IMAP para guardar copia del correo enviado en "Sent" (mismo
+        // host/usuario/contraseña que el SMTP de arriba - mismo buzon, distinto
+        // protocolo). Sin esto, mandar por SMTP directo no deja rastro en el
+        // cliente de correo (Roundcube) porque SMTP no tiene concepto de carpetas.
+        public int? ImapPort { get; set; }
+
         // Firma HTML propia de este usuario (la misma que usa en su cliente de correo,
         // ej. Outlook). MailKit arma el mensaje a mano y no pasa por ningun cliente de
         // correo, asi que si no se guarda aca el correo sale sin firma.

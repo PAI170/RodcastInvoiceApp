@@ -196,6 +196,8 @@
   <data name="Settings_SmtpSection" xml:space="preserve"><value>Correo (SMTP)</value></data>
   <data name="Settings_Host" xml:space="preserve"><value>Servidor SMTP (host)</value></data>
   <data name="Settings_Port" xml:space="preserve"><value>Puerto</value></data>
+  <data name="Settings_ImapPort" xml:space="preserve"><value>Puerto IMAP</value></data>
+  <data name="Settings_ImapPortHelp" xml:space="preserve"><value>Se usa para guardar una copia de los correos enviados en tu carpeta "Enviados" (usualmente 993).</value></data>
   <data name="Settings_YourEmail" xml:space="preserve"><value>Tu email</value></data>
   <data name="Settings_Password" xml:space="preserve"><value>Contraseña</value></data>
   <data name="Settings_PasswordHelp" xml:space="preserve"><value>Dejala en blanco para no cambiarla.</value></data>

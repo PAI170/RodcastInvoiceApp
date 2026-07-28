@@ -94,6 +94,7 @@ namespace RodcastInvoiceApp.Web.Services
             {
                 Host = sender.SmtpHost!,
                 Port = sender.SmtpPort!.Value,
+                ImapPort = sender.ImapPort,
                 Username = sender.SmtpUsername!,
                 Password = _credentialsProtector.Unprotect(sender.SmtpPasswordProtected!),
                 FromDisplayName = sender.DisplayName

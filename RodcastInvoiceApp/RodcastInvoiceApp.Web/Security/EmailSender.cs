@@ -1,3 +1,5 @@
+using MailKit;
+using MailKit.Net.Imap;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
@@ -15,6 +17,7 @@ namespace RodcastInvoiceApp.Web.Security
     {
         public string Host { get; set; } = string.Empty;
         public int Port { get; set; }
+        public int? ImapPort { get; set; }
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string FromDisplayName { get; set; } = string.Empty;
@@ -56,12 +59,52 @@ namespace RodcastInvoiceApp.Web.Security
 
             message.Body = bodyBuilder.ToMessageBody();
 
-            using var client = new SmtpClient();
-            // Auto detecta el modo correcto segun el puerto (465 = SSL directo, 587 = STARTTLS).
-            await client.ConnectAsync(credentials.Host, credentials.Port, SecureSocketOptions.Auto);
-            await client.AuthenticateAsync(credentials.Username, credentials.Password);
-            await client.SendAsync(message);
-            await client.DisconnectAsync(true);
+            using (var smtpClient = new SmtpClient())
+            {
+                // Auto detecta el modo correcto segun el puerto (465 = SSL directo, 587 = STARTTLS).
+                await smtpClient.ConnectAsync(credentials.Host, credentials.Port, SecureSocketOptions.Auto);
+                await smtpClient.AuthenticateAsync(credentials.Username, credentials.Password);
+                await smtpClient.SendAsync(message);
+                await smtpClient.DisconnectAsync(true);
+            }
+
+            // SMTP no tiene concepto de "carpeta Enviados" (eso es IMAP): un cliente
+            // de correo como Roundcube la llena solo cuando el envio pasa por su propio
+            // compositor, algo que no ocurre aca porque mandamos directo por SMTP. Por
+            // eso, despues de un envio exitoso, guardamos nosotros mismos una copia en
+            // "Sent" via IMAP APPEND - best effort: si esto falla (imap mal configurado,
+            // servidor caido) el correo YA salio, asi que no rompemos el envio por esto.
+            if (credentials.ImapPort is > 0)
+            {
+                try
+                {
+                    await AppendToSentAsync(credentials, message);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        private static async Task AppendToSentAsync(SmtpCredentials credentials, MimeMessage message)
+        {
+            using var imapClient = new ImapClient();
+            await imapClient.ConnectAsync(credentials.Host, credentials.ImapPort!.Value, SecureSocketOptions.Auto);
+            await imapClient.AuthenticateAsync(credentials.Username, credentials.Password);
+
+            // SPECIAL-USE (RFC 6154) deja pedirle al servidor "la carpeta que vos uses
+            // para Enviados", sin adivinar el nombre exacto (varia: "Sent", "Sent Items",
+            // "INBOX.Sent" segun el servidor). Dovecot (lo mas comun en hosting tipo
+            // CloudPanel) la soporta de fabrica.
+            var sentFolder = imapClient.GetFolder(SpecialFolder.Sent);
+            if (sentFolder is not null)
+            {
+                await sentFolder.OpenAsync(FolderAccess.ReadWrite);
+                await sentFolder.AppendAsync(message, MessageFlags.Seen);
+                await sentFolder.CloseAsync();
+            }
+
+            await imapClient.DisconnectAsync(true);
         }
     }
 }
