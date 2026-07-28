@@ -10,18 +10,12 @@ namespace RodcastInvoiceApp.Web.Services
 {
     public class InvoiceEmailService : IInvoiceEmailService
     {
-        // ======================= TEMPORAL - MODO PRUEBAS =======================
-        // Mientras se prueba como llegan los correos, se pisa el destinatario real
-        // y se vacia el CC. Sacar esto (volver a "invoice.ClientEmail" en los dos
-        // usos de abajo, y restaurar el CC real) cuando el usuario avise que ya
-        // termino de probar.
-        private const string TestOnlyRecipientOverride = "davidrp97@outlook.com";
-
         // Fijo: siempre van en copia, nadie los puede editar desde la UI.
-        // CC real (restaurar al terminar las pruebas):
-        //   "fernando.catala@hemmersbach.com", "maciej.wrobel@hemmersbach.com"
-        private static readonly string[] FixedCcRecipients = Array.Empty<string>();
-        // ==================== FIN TEMPORAL - MODO PRUEBAS ======================
+        private static readonly string[] FixedCcRecipients =
+        {
+            "fernando.catala@hemmersbach.com",
+            "maciej.wrobel@hemmersbach.com"
+        };
 
         private readonly IInvoiceService _invoiceService;
         private readonly IInvoicePdfService _invoicePdfService;
@@ -52,7 +46,7 @@ namespace RodcastInvoiceApp.Web.Services
 
             return new InvoiceEmailPreviewDto
             {
-                ToEmail = TestOnlyRecipientOverride, // TEMPORAL - PRUEBAS (ver arriba)
+                ToEmail = invoice.ClientEmail,
                 CcEmails = FixedCcRecipients,
                 Subject = BuildSubject(invoice.InvoiceNumber),
                 Body = BuildBody(invoice.InvoiceNumber),
@@ -106,7 +100,7 @@ namespace RodcastInvoiceApp.Web.Services
             };
 
             await _emailSender.SendAsync(
-                credentials, TestOnlyRecipientOverride, FixedCcRecipients, BuildSubject(invoice.InvoiceNumber), // TEMPORAL - PRUEBAS (ver arriba)
+                credentials, invoice.ClientEmail!, FixedCcRecipients, BuildSubject(invoice.InvoiceNumber),
                 BuildBody(invoice.InvoiceNumber), sender.EmailSignatureHtml, attachments);
 
             return await _invoiceService.UpdateStatusAsync(invoiceId, InvoiceStatus.Sent);
