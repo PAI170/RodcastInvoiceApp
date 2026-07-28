@@ -13,6 +13,11 @@ namespace RodcastInvoiceApp.Web.Data.Models
         public int? SmtpPort { get; set; }
         public string? SmtpUsername { get; set; }
         public string? SmtpPasswordProtected { get; set; }
+
+        // Firma HTML propia de este usuario (la misma que usa en su cliente de correo,
+        // ej. Outlook). MailKit arma el mensaje a mano y no pasa por ningun cliente de
+        // correo, asi que si no se guarda aca el correo sale sin firma.
+        public string? EmailSignatureHtml { get; set; }
     }
 
     public static class AppRoles

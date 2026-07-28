@@ -1,10 +1,14 @@
+@using Microsoft.Extensions.Localization
+@using RodcastInvoiceApp.Web.Resources
+@inject IStringLocalizer<SharedResource> Loc
+
 @if (IsVisible)
 {
     <div class="pdf-modal-backdrop" @onclick="Close">
         <div class="pdf-modal-content" @onclick:stopPropagation="true">
             <div class="pdf-modal-header">
                 <strong>@Title</strong>
-                <button type="button" class="btn-close" aria-label="Cerrar" @onclick="Close"></button>
+                <button type="button" class="btn-close" aria-label="@Loc["Common_Close"]" @onclick="Close"></button>
             </div>
             @if (!string.IsNullOrEmpty(PdfUrl))
             {

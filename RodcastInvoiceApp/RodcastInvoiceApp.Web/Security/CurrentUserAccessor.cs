@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.Data.Models;
 using RodcastInvoiceApp.Web.Exceptions;
+using RodcastInvoiceApp.Web.Resources;
 
 namespace RodcastInvoiceApp.Web.Security
 {
@@ -19,10 +21,13 @@ namespace RodcastInvoiceApp.Web.Security
     public class CurrentUserAccessor : ICurrentUserAccessor
     {
         private readonly AuthenticationStateProvider _authenticationStateProvider;
+        private readonly IStringLocalizer<SharedResource> _loc;
 
-        public CurrentUserAccessor(AuthenticationStateProvider authenticationStateProvider)
+        public CurrentUserAccessor(
+            AuthenticationStateProvider authenticationStateProvider, IStringLocalizer<SharedResource> loc)
         {
             _authenticationStateProvider = authenticationStateProvider;
+            _loc = loc;
         }
 
         public async Task<bool> IsAdminAsync()
@@ -34,7 +39,7 @@ namespace RodcastInvoiceApp.Web.Security
         public async Task EnsureAdminAsync()
         {
             if (!await IsAdminAsync())
-                throw new ForbiddenException("No tenés permiso para realizar esta acción.");
+                throw new ForbiddenException(_loc["SvcErr_Forbidden"]);
         }
     }
 }

@@ -1,17 +1,19 @@
-@page "/mi-correo"
+@page "/ajustes"
 @attribute [Authorize]
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.Extensions.Localization
 @using RodcastInvoiceApp.Web.Data.Models
+@using RodcastInvoiceApp.Web.Resources
 @using RodcastInvoiceApp.Web.Security
 @inject UserManager<ApplicationUser> UserManager
 @inject ISmtpCredentialsProtector CredentialsProtector
+@inject IStringLocalizer<SharedResource> Loc
 
-<PageTitle>Mi correo</PageTitle>
+<PageTitle>@Loc["Settings_Title"]</PageTitle>
 
-<h1>Mi correo</h1>
+<h1>@Loc["Settings_Title"]</h1>
 <p class="text-muted">
-    Configurá tu propio correo (el mismo que usás en Roundcube) para poder mandar facturas
-    por email — el correo sale desde tu cuenta, no de una compartida.
+    @Loc["Settings_Description"]
 </p>
 
 @if (errorMessage is not null)
@@ -26,31 +28,45 @@
 
 @if (model is null)
 {
-    <p><em>Cargando...</em></p>
+    <p><em>@Loc["Common_Loading"]</em></p>
 }
 else
 {
-    <EditForm Model="model" FormName="EmailSettingsForm" OnValidSubmit="HandleSave">
+    <EditForm Model="model" FormName="SettingsForm" OnValidSubmit="HandleSave">
+        <h2 class="h5">@Loc["Settings_SmtpSection"]</h2>
         <div class="row g-2" style="max-width: 600px;">
             <div class="col-md-8">
-                <label class="form-label">Servidor SMTP (host)</label>
+                <label class="form-label">@Loc["Settings_Host"]</label>
                 <InputText class="form-control" placeholder="mail.tudominio.com" @bind-Value="model.Host" />
             </div>
             <div class="col-md-4">
-                <label class="form-label">Puerto</label>
+                <label class="form-label">@Loc["Settings_Port"]</label>
                 <InputNumber class="form-control" @bind-Value="model.Port" />
             </div>
             <div class="col-md-8">
-                <label class="form-label">Tu email</label>
+                <label class="form-label">@Loc["Settings_YourEmail"]</label>
                 <InputText class="form-control" type="email" placeholder="tu@tudominio.com" @bind-Value="model.Username" />
             </div>
             <div class="col-md-8">
-                <label class="form-label">Contraseña</label>
+                <label class="form-label">@Loc["Settings_Password"]</label>
                 <InputText class="form-control" type="password" placeholder="@passwordPlaceholder" @bind-Value="model.Password" />
-                <div class="form-text">Dejala en blanco para no cambiarla.</div>
+                <div class="form-text">@Loc["Settings_PasswordHelp"]</div>
             </div>
         </div>
-        <button type="submit" class="btn btn-primary mt-3">Guardar</button>
+
+        <h2 class="h5 mt-4">@Loc["Settings_SignatureSection"]</h2>
+        <div class="row g-2" style="max-width: 600px;">
+            <div class="col-12">
+                <label class="form-label">@Loc["Settings_SignatureLabel"]</label>
+                <InputTextArea class="form-control" rows="8" style="font-family: monospace; font-size: 0.85rem;"
+                                @bind-Value="model.SignatureHtml" />
+                <div class="form-text">
+                    @Loc["Settings_SignatureHelp"]
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">@Loc["Common_Save"]</button>
     </EditForm>
 }
 
@@ -78,11 +94,12 @@ else
         {
             Host = currentUser.SmtpHost ?? string.Empty,
             Port = currentUser.SmtpPort ?? 465,
-            Username = currentUser.SmtpUsername ?? currentUser.Email ?? string.Empty
+            Username = currentUser.SmtpUsername ?? currentUser.Email ?? string.Empty,
+            SignatureHtml = currentUser.EmailSignatureHtml ?? string.Empty
         };
 
         passwordPlaceholder = string.IsNullOrEmpty(currentUser.SmtpPasswordProtected)
-            ? "sin configurar"
+            ? Loc["Settings_NotConfiguredPlaceholder"]
             : "••••••••";
     }
 
@@ -99,6 +116,7 @@ else
             currentUser.SmtpHost = model.Host;
             currentUser.SmtpPort = model.Port;
             currentUser.SmtpUsername = model.Username;
+            currentUser.EmailSignatureHtml = string.IsNullOrWhiteSpace(model.SignatureHtml) ? null : model.SignatureHtml;
 
             if (!string.IsNullOrWhiteSpace(model.Password))
                 currentUser.SmtpPasswordProtected = CredentialsProtector.Protect(model.Password);
@@ -112,11 +130,11 @@ else
 
             model.Password = string.Empty;
             passwordPlaceholder = "••••••••";
-            successMessage = "Guardado.";
+            successMessage = Loc["Settings_Saved"];
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 
@@ -126,5 +144,6 @@ else
         public int Port { get; set; } = 465;
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+        public string SignatureHtml { get; set; } = string.Empty;
     }
 }

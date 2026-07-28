@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using QuestPDF.Fluent;
 using RodcastInvoiceApp.Web.Data;
 using RodcastInvoiceApp.Web.Data.Models;
@@ -7,6 +8,7 @@ using RodcastInvoiceApp.Web.DataTransferObjects.Timesheet;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
 using RodcastInvoiceApp.Web.Pdf;
+using RodcastInvoiceApp.Web.Resources;
 using RodcastInvoiceApp.Web.Timesheet;
 
 namespace RodcastInvoiceApp.Web.Services
@@ -16,15 +18,18 @@ namespace RodcastInvoiceApp.Web.Services
         private readonly AppDbContext _context;
         private readonly ICompanySettingsService _companySettingsService;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IStringLocalizer<SharedResource> _loc;
 
         public TimesheetService(
             AppDbContext context,
             ICompanySettingsService companySettingsService,
-            IWebHostEnvironment webHostEnvironment)
+            IWebHostEnvironment webHostEnvironment,
+            IStringLocalizer<SharedResource> loc)
         {
             _context = context;
             _companySettingsService = companySettingsService;
             _webHostEnvironment = webHostEnvironment;
+            _loc = loc;
         }
 
         public async Task<TimesheetDto> GetAsync(int invoiceId)
@@ -33,7 +38,7 @@ namespace RodcastInvoiceApp.Web.Services
                 .AsNoTracking()
                 .Include(i => i.Project)
                 .FirstOrDefaultAsync(i => i.Id == invoiceId)
-                ?? throw new NotFoundException("Factura no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_InvoiceNotFound"]);
 
             return BuildDto(invoice);
         }
@@ -43,18 +48,18 @@ namespace RodcastInvoiceApp.Web.Services
             var invoice = await _context.Invoices
                 .Include(i => i.Project)
                 .FirstOrDefaultAsync(i => i.Id == invoiceId)
-                ?? throw new NotFoundException("Factura no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_InvoiceNotFound"]);
 
             var daysInMonth = DateTime.DaysInMonth(invoice.InvoiceDate.Year, invoice.InvoiceDate.Month);
 
             foreach (var exception in dto.Exceptions)
             {
                 if (exception.Day < 1 || exception.Day > daysInMonth)
-                    throw new BadRequestException($"El día {exception.Day} no es válido para este mes.");
+                    throw new BadRequestException(_loc["SvcErr_TimesheetInvalidDay", exception.Day]);
 
                 var date = new DateTime(invoice.InvoiceDate.Year, invoice.InvoiceDate.Month, exception.Day);
                 if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
-                    throw new BadRequestException($"El día {exception.Day} es fin de semana, no se puede marcar.");
+                    throw new BadRequestException(_loc["SvcErr_TimesheetWeekend", exception.Day]);
             }
 
             invoice.TimesheetExceptions = JsonSerializer.Serialize(dto.Exceptions);
@@ -69,7 +74,7 @@ namespace RodcastInvoiceApp.Web.Services
                 .AsNoTracking()
                 .Include(i => i.Project)
                 .FirstOrDefaultAsync(i => i.Id == invoiceId)
-                ?? throw new NotFoundException("Factura no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_InvoiceNotFound"]);
 
             var dto = BuildDto(invoice);
             var company = await _companySettingsService.GetAsync();

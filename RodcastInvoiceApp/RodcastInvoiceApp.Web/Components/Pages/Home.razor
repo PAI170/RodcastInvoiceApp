@@ -1,28 +1,32 @@
 @page "/"
 @attribute [Authorize]
+@using Microsoft.Extensions.Localization
+@using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.Client
 @using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
 @using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Resources
 @inject IClientService ClientService
 @inject IInvoiceService InvoiceService
+@inject IStringLocalizer<SharedResource> Loc
 
-<PageTitle>Sistema de Facturación</PageTitle>
+<PageTitle>@Loc["Home_Title"]</PageTitle>
 
-<h1 class="mb-5">Sistema de Facturación</h1>
+<h1 class="mb-5">@Loc["Home_Title"]</h1>
 
 <div class="mb-5">
     <div class="d-flex justify-content-between align-items-center">
-        <h2>Clientes</h2>
-        <a class="btn btn-outline-primary btn-sm" href="/clients">Ver todos</a>
+        <h2>@Loc["Nav_Clients"]</h2>
+        <a class="btn btn-outline-primary btn-sm" href="/clients">@Loc["Home_ViewAll"]</a>
     </div>
 
     @if (recentClients is null)
     {
-        <p><em>Cargando...</em></p>
+        <p><em>@Loc["Common_Loading"]</em></p>
     }
     else if (recentClients.Count == 0)
     {
-        <p class="text-muted">Todavía no hay clientes registrados.</p>
+        <p class="text-muted">@Loc["Home_NoClientsYet"]</p>
     }
     else
     {
@@ -30,9 +34,9 @@
         <table class="table table-sm">
             <thead>
                 <tr>
-                    <th>Nombre</th>
-                    <th>País</th>
-                    <th>Proyectos</th>
+                    <th>@Loc["Field_Name"]</th>
+                    <th>@Loc["Field_Country"]</th>
+                    <th>@Loc["Field_Projects"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -52,17 +56,17 @@
 
 <div>
     <div class="d-flex justify-content-between align-items-center">
-        <h2>Últimas facturas</h2>
-        <a class="btn btn-outline-primary btn-sm" href="/invoices">Ver todas</a>
+        <h2>@Loc["Home_RecentInvoices"]</h2>
+        <a class="btn btn-outline-primary btn-sm" href="/invoices">@Loc["Home_ViewAll"]</a>
     </div>
 
     @if (recentInvoices is null)
     {
-        <p><em>Cargando...</em></p>
+        <p><em>@Loc["Common_Loading"]</em></p>
     }
     else if (recentInvoices.Count == 0)
     {
-        <p class="text-muted">Todavía no hay facturas creadas.</p>
+        <p class="text-muted">@Loc["Home_NoInvoicesYet"]</p>
     }
     else
     {
@@ -70,11 +74,11 @@
         <table class="table table-sm">
             <thead>
                 <tr>
-                    <th>No.</th>
-                    <th>Cliente / Proyecto</th>
-                    <th>Fecha</th>
-                    <th>Estado</th>
-                    <th>Total</th>
+                    <th>@Loc["Field_InvoiceNo"]</th>
+                    <th>@Loc["Field_ClientProject"]</th>
+                    <th>@Loc["Field_Date"]</th>
+                    <th>@Loc["Field_Status"]</th>
+                    <th>@Loc["Field_Total"]</th>
                     <th></th>
                 </tr>
             </thead>
@@ -85,9 +89,9 @@
                         <td>@invoice.InvoiceNumber</td>
                         <td>@invoice.ClientName / @invoice.ProjectName</td>
                         <td>@invoice.InvoiceDate.ToString("yyyy-MM-dd")</td>
-                        <td>@invoice.Status</td>
+                        <td>@invoice.Status.ToDisplayText(Loc)</td>
                         <td>@invoice.Total.ToString("0.00") @invoice.Currency</td>
-                        <td><a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}")">Ver</a></td>
+                        <td><a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}")">@Loc["Common_View"]</a></td>
                     </tr>
                 }
             </tbody>

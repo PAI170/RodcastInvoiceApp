@@ -28,6 +28,43 @@ h1:focus {
     outline: 1px solid #26b050;
 }
 
+/* Modal generico usado por EmailPreviewModal y por el aviso de timesheet
+   faltante en InvoiceDetail. Global (no scoped a un componente) para que
+   ambos lo puedan compartir. */
+.email-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.email-modal-content {
+    background: white;
+    width: 100%;
+    max-width: 650px;
+    max-height: 90vh;
+    border-radius: 6px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.4);
+}
+
+.email-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
 .invalid {
     outline: 1px solid #e50000;
 }

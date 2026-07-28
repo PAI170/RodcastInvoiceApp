@@ -20,6 +20,7 @@ namespace RodcastInvoiceApp.Web.Data
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<InvoiceItem> InvoiceItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<InvoiceEmailApproval> InvoiceEmailApprovals { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -70,7 +71,7 @@ namespace RodcastInvoiceApp.Web.Data
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.Status)
                 .HasConversion<string>()
-                .HasMaxLength(10);
+                .HasMaxLength(20);
 
             // El numero de factura es el identificador visible para el cliente: no puede repetirse.
             modelBuilder.Entity<Invoice>()
@@ -95,6 +96,31 @@ namespace RodcastInvoiceApp.Web.Data
                 .WithMany(i => i.Payments)
                 .HasForeignKey(p => p.InvoiceId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Las solicitudes de aprobacion son historial de la factura: se borran con ella.
+            modelBuilder.Entity<InvoiceEmailApproval>()
+                .HasOne(a => a.Invoice)
+                .WithMany(i => i.EmailApprovals)
+                .HasForeignKey(a => a.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // No se puede borrar un usuario que pidio o reviso un envio (queda el historial).
+            modelBuilder.Entity<InvoiceEmailApproval>()
+                .HasOne(a => a.RequestedByUser)
+                .WithMany()
+                .HasForeignKey(a => a.RequestedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InvoiceEmailApproval>()
+                .HasOne(a => a.ReviewedByUser)
+                .WithMany()
+                .HasForeignKey(a => a.ReviewedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InvoiceEmailApproval>()
+                .Property(a => a.Status)
+                .HasConversion<string>()
+                .HasMaxLength(10);
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

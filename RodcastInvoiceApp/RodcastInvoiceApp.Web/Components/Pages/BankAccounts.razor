@@ -1,14 +1,17 @@
 @page "/bank-accounts"
 @attribute [Authorize(Roles = AppRoles.Admin)]
+@using Microsoft.Extensions.Localization
 @using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.BankAccount
 @using RodcastInvoiceApp.Web.Exceptions
 @using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Resources
 @inject IBankAccountService BankAccountService
+@inject IStringLocalizer<SharedResource> Loc
 
-<PageTitle>Cuentas Bancarias</PageTitle>
+<PageTitle>@Loc["BankAccounts_Title"]</PageTitle>
 
-<h1>Cuentas Bancarias</h1>
+<h1>@Loc["BankAccounts_Title"]</h1>
 
 @if (errorMessage is not null)
 {
@@ -17,7 +20,7 @@
 
 @if (accounts is null)
 {
-    <p><em>Cargando...</em></p>
+    <p><em>@Loc["Common_Loading"]</em></p>
 }
 else
 {
@@ -25,12 +28,12 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Banco</th>
-                <th>Titular</th>
-                <th>No. Cuenta</th>
-                <th>IBAN</th>
-                <th>SWIFT</th>
-                <th>Moneda</th>
+                <th>@Loc["Field_Bank"]</th>
+                <th>@Loc["Field_Holder"]</th>
+                <th>@Loc["Field_AccountNo"]</th>
+                <th>@Loc["Field_Iban"]</th>
+                <th>@Loc["Field_Swift"]</th>
+                <th>@Loc["Field_Currency"]</th>
                 <th></th>
             </tr>
         </thead>
@@ -47,8 +50,8 @@ else
                         <td><input class="form-control" @bind="editingDto.Swift" /></td>
                         <td><input class="form-control" @bind="editingDto.Currency" /></td>
                         <td>
-                            <button class="btn btn-primary btn-sm" @onclick="HandleUpdate">Guardar</button>
-                            <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancelar</button>
+                            <button class="btn btn-primary btn-sm" @onclick="HandleUpdate">@Loc["Common_Save"]</button>
+                            <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">@Loc["Common_Cancel"]</button>
                         </td>
                     </tr>
                 }
@@ -62,8 +65,8 @@ else
                         <td>@account.Swift</td>
                         <td>@account.Currency</td>
                         <td>
-                            <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(account)">Editar</button>
-                            <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(account.Id)">Eliminar</button>
+                            <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(account)">@Loc["Common_Edit"]</button>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(account.Id)">@Loc["Common_Delete"]</button>
                         </td>
                     </tr>
                 }
@@ -73,30 +76,30 @@ else
     </div>
 }
 
-<h2>Nueva cuenta</h2>
+<h2>@Loc["BankAccounts_New"]</h2>
 
 <EditForm Model="newAccount" FormName="NewBankAccountForm" OnValidSubmit="HandleCreate">
     <div class="row g-2">
         <div class="col-md-2">
-            <InputText class="form-control" placeholder="Banco" @bind-Value="newAccount.BankName" />
+            <InputText class="form-control" placeholder="@Loc["Field_Bank"]" @bind-Value="newAccount.BankName" />
         </div>
         <div class="col-md-2">
-            <InputText class="form-control" placeholder="Titular" @bind-Value="newAccount.AccountHolder" />
+            <InputText class="form-control" placeholder="@Loc["Field_Holder"]" @bind-Value="newAccount.AccountHolder" />
         </div>
         <div class="col-md-2">
-            <InputText class="form-control" placeholder="No. Cuenta" @bind-Value="newAccount.AccountNumber" />
+            <InputText class="form-control" placeholder="@Loc["Field_AccountNo"]" @bind-Value="newAccount.AccountNumber" />
         </div>
         <div class="col-md-2">
-            <InputText class="form-control" placeholder="IBAN" @bind-Value="newAccount.Iban" />
+            <InputText class="form-control" placeholder="@Loc["Field_Iban"]" @bind-Value="newAccount.Iban" />
         </div>
         <div class="col-md-2">
-            <InputText class="form-control" placeholder="SWIFT" @bind-Value="newAccount.Swift" />
+            <InputText class="form-control" placeholder="@Loc["Field_Swift"]" @bind-Value="newAccount.Swift" />
         </div>
         <div class="col-md-2">
-            <InputText class="form-control" placeholder="Moneda" @bind-Value="newAccount.Currency" />
+            <InputText class="form-control" placeholder="@Loc["Field_Currency"]" @bind-Value="newAccount.Currency" />
         </div>
     </div>
-    <button type="submit" class="btn btn-primary mt-2">Crear cuenta</button>
+    <button type="submit" class="btn btn-primary mt-2">@Loc["BankAccounts_CreateButton"]</button>
 </EditForm>
 
 @code {
@@ -131,7 +134,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 
@@ -172,7 +175,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 
@@ -190,7 +193,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 }

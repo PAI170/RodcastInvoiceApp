@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RodcastInvoiceApp.Web.Data;
 
@@ -11,9 +12,11 @@ using RodcastInvoiceApp.Web.Data;
 namespace RodcastInvoiceApp.Web.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260728042229_AddUserEmailSignature")]
+    partial class AddUserEmailSignature
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -433,8 +436,8 @@ namespace RodcastInvoiceApp.Web.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
                     b.Property<string>("TicketNumber")
                         .HasMaxLength(50)
@@ -465,53 +468,6 @@ namespace RodcastInvoiceApp.Web.Migrations
                     b.HasIndex("ProjectId");
 
                     b.ToTable("Invoices");
-                });
-
-            modelBuilder.Entity("RodcastInvoiceApp.Web.Data.Models.InvoiceEmailApproval", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("InvoiceId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RejectionComment")
-                        .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)");
-
-                    b.Property<string>("RequestedByUserId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("ReviewedByUserId")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InvoiceId");
-
-                    b.HasIndex("RequestedByUserId");
-
-                    b.HasIndex("ReviewedByUserId");
-
-                    b.ToTable("InvoiceEmailApprovals");
                 });
 
             modelBuilder.Entity("RodcastInvoiceApp.Web.Data.Models.InvoiceItem", b =>
@@ -756,32 +712,6 @@ namespace RodcastInvoiceApp.Web.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("RodcastInvoiceApp.Web.Data.Models.InvoiceEmailApproval", b =>
-                {
-                    b.HasOne("RodcastInvoiceApp.Web.Data.Models.Invoice", "Invoice")
-                        .WithMany("EmailApprovals")
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("RodcastInvoiceApp.Web.Data.Models.ApplicationUser", "RequestedByUser")
-                        .WithMany()
-                        .HasForeignKey("RequestedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("RodcastInvoiceApp.Web.Data.Models.ApplicationUser", "ReviewedByUser")
-                        .WithMany()
-                        .HasForeignKey("ReviewedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Invoice");
-
-                    b.Navigation("RequestedByUser");
-
-                    b.Navigation("ReviewedByUser");
-                });
-
             modelBuilder.Entity("RodcastInvoiceApp.Web.Data.Models.InvoiceItem", b =>
                 {
                     b.HasOne("RodcastInvoiceApp.Web.Data.Models.Invoice", "Invoice")
@@ -838,8 +768,6 @@ namespace RodcastInvoiceApp.Web.Migrations
 
             modelBuilder.Entity("RodcastInvoiceApp.Web.Data.Models.Invoice", b =>
                 {
-                    b.Navigation("EmailApprovals");
-
                     b.Navigation("InvoiceItems");
 
                     b.Navigation("Payments");

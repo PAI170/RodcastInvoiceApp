@@ -1,10 +1,12 @@
 using FluentValidation;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.Data;
 using RodcastInvoiceApp.Web.DataTransferObjects.Client;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Resources;
 using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
@@ -15,17 +17,20 @@ namespace RodcastInvoiceApp.Web.Services
         private readonly IValidator<ClientCreateDto> _createValidator;
         private readonly IValidator<ClientUpdateDto> _updateValidator;
         private readonly ICurrentUserAccessor _currentUser;
+        private readonly IStringLocalizer<SharedResource> _loc;
 
         public ClientService(
             AppDbContext context,
             IValidator<ClientCreateDto> createValidator,
             IValidator<ClientUpdateDto> updateValidator,
-            ICurrentUserAccessor currentUser)
+            ICurrentUserAccessor currentUser,
+            IStringLocalizer<SharedResource> loc)
         {
             _context = context;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
             _currentUser = currentUser;
+            _loc = loc;
         }
 
         public async Task<IEnumerable<ClientResponseDto>> GetAllAsync(int? take = null)
@@ -46,7 +51,7 @@ namespace RodcastInvoiceApp.Web.Services
                 .AsNoTracking()
                 .Include(c => c.Projects)
                 .FirstOrDefaultAsync(c => c.Id == id)
-                ?? throw new NotFoundException("Cliente no encontrado.");
+                ?? throw new NotFoundException(_loc["SvcErr_ClientNotFound"]);
 
             return client.Adapt<ClientResponseDto>();
         }
@@ -73,7 +78,7 @@ namespace RodcastInvoiceApp.Web.Services
             var client = await _context.Clients
                 .Include(c => c.Projects)
                 .FirstOrDefaultAsync(c => c.Id == id)
-                ?? throw new NotFoundException("Cliente no encontrado.");
+                ?? throw new NotFoundException(_loc["SvcErr_ClientNotFound"]);
 
             await ValidateUniqueFieldsAsync(dto.Name, dto.VatId, id);
 
@@ -90,11 +95,11 @@ namespace RodcastInvoiceApp.Web.Services
             var client = await _context.Clients
                 .Include(c => c.Projects)
                 .FirstOrDefaultAsync(c => c.Id == id)
-                ?? throw new NotFoundException("Cliente no encontrado.");
+                ?? throw new NotFoundException(_loc["SvcErr_ClientNotFound"]);
 
             if (client.Projects.Any())
                 throw new ConflictException(
-                    "No se puede eliminar el cliente porque tiene proyectos asociados.");
+                    _loc["SvcErr_ClientHasProjects"]);
 
             _context.Clients.Remove(client);
             await _context.SaveChangesAsync();
@@ -114,13 +119,13 @@ namespace RodcastInvoiceApp.Web.Services
                 .AnyAsync(c => c.Name == name && (excludeId == null || c.Id != excludeId));
 
             if (nameExists)
-                throw new ConflictException("Ya existe un cliente con ese nombre.");
+                throw new ConflictException(_loc["SvcErr_ClientDuplicateName"]);
 
             var vatIdExists = await _context.Clients
                 .AnyAsync(c => c.VatId == vatId && (excludeId == null || c.Id != excludeId));
 
             if (vatIdExists)
-                throw new ConflictException("Ya existe un cliente con ese VAT ID.");
+                throw new ConflictException(_loc["SvcErr_ClientDuplicateVatId"]);
         }
     }
 }

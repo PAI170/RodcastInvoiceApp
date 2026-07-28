@@ -23,22 +23,31 @@ namespace RodcastInvoiceApp.Web.Security
     public interface IEmailSender
     {
         Task SendAsync(
-            SmtpCredentials credentials, string toEmail, string subject, string body,
-            IEnumerable<EmailAttachment> attachments);
+            SmtpCredentials credentials, string toEmail, IEnumerable<string> ccEmails, string subject,
+            string body, string? signatureHtml, IEnumerable<EmailAttachment> attachments);
     }
 
     public class MailKitEmailSender : IEmailSender
     {
         public async Task SendAsync(
-            SmtpCredentials credentials, string toEmail, string subject, string body,
-            IEnumerable<EmailAttachment> attachments)
+            SmtpCredentials credentials, string toEmail, IEnumerable<string> ccEmails, string subject,
+            string body, string? signatureHtml, IEnumerable<EmailAttachment> attachments)
         {
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(credentials.FromDisplayName, credentials.Username));
             message.To.Add(MailboxAddress.Parse(toEmail));
+            foreach (var cc in ccEmails)
+                message.Cc.Add(MailboxAddress.Parse(cc));
             message.Subject = subject;
 
+            // MailKit no pasa por ningun cliente de correo (Outlook, Gmail, etc.), asi que
+            // la firma no se agrega sola: EmailHtmlRenderer arma el HtmlBody con el mensaje
+            // mas la firma. Misma funcion que usa la pantalla de aprobaciones para la vista
+            // previa, para que el admin vea exactamente lo que se va a mandar.
             var bodyBuilder = new BodyBuilder { TextBody = body };
+            if (!string.IsNullOrWhiteSpace(signatureHtml))
+                bodyBuilder.HtmlBody = EmailHtmlRenderer.BuildHtmlBody(body, signatureHtml);
+
             foreach (var attachment in attachments)
             {
                 bodyBuilder.Attachments.Add(

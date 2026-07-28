@@ -1,32 +1,34 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.DataTransferObjects.Client;
+using RodcastInvoiceApp.Web.Resources;
 
 namespace RodcastInvoiceApp.Web.Validators.Client
 {
     public class ClientCreateValidator : AbstractValidator<ClientCreateDto>
     {
-        public ClientCreateValidator()
+        public ClientCreateValidator(IStringLocalizer<SharedResource> loc)
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("El nombre del cliente es obligatorio.")
-                .MaximumLength(150).WithMessage("El nombre no puede superar 150 caracteres.");
+                .NotEmpty().WithMessage(loc["Val_Required_ClientName"])
+                .MaximumLength(150).WithMessage(loc["Val_MaxLength", 150]);
 
             RuleFor(x => x.VatId)
-                .NotEmpty().WithMessage("El VAT ID es obligatorio.")
-                .MaximumLength(50).WithMessage("El VAT ID no puede superar 50 caracteres.");
+                .NotEmpty().WithMessage(loc["Val_Required_VatId"])
+                .MaximumLength(50).WithMessage(loc["Val_MaxLength", 50]);
 
             RuleFor(x => x.Address)
-                .MaximumLength(250).WithMessage("La dirección no puede superar 250 caracteres.");
+                .MaximumLength(250).WithMessage(loc["Val_MaxLength", 250]);
 
             RuleFor(x => x.Country)
-                .MaximumLength(100).WithMessage("El país no puede superar 100 caracteres.");
+                .MaximumLength(100).WithMessage(loc["Val_MaxLength", 100]);
 
             RuleFor(x => x.DefaultCurrency)
-                .NotEmpty().WithMessage("La moneda es obligatoria.")
-                .Length(3).WithMessage("La moneda debe tener 3 caracteres (ej. USD).");
+                .NotEmpty().WithMessage(loc["Val_Currency_Required"])
+                .Length(3).WithMessage(loc["Val_Currency_Length"]);
 
             RuleFor(x => x.SupplierIdAssigned)
-                .MaximumLength(50).WithMessage("El ID de proveedor no puede superar 50 caracteres.")
+                .MaximumLength(50).WithMessage(loc["Val_MaxLength", 50])
                 .When(x => !string.IsNullOrWhiteSpace(x.SupplierIdAssigned));
         }
     }

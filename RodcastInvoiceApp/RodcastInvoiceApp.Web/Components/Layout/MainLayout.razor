@@ -1,4 +1,7 @@
 ﻿@inherits LayoutComponentBase
+@using Microsoft.Extensions.Localization
+@using RodcastInvoiceApp.Web.Resources
+@inject IStringLocalizer<SharedResource> Loc
 
 <div class="page">
     <div class="sidebar">
@@ -14,13 +17,12 @@
                 <ErrorContent>
                     <div class="alert alert-danger mt-3">
                         <p>
-                            <strong>Ocurrió un error inesperado.</strong> Puede ser un problema temporal
-                            de conexión con la base de datos. Intentá de nuevo en unos segundos.
+                            <strong>@Loc["Layout_ErrorTitle"]</strong> @Loc["Layout_ErrorBody"]
                         </p>
                         <button class="btn btn-outline-danger btn-sm" @onclick="() => errorBoundary?.Recover()">
-                            Reintentar
+                            @Loc["Layout_Retry"]
                         </button>
-                        <a class="btn btn-outline-secondary btn-sm" href=".">Recargar página</a>
+                        <a class="btn btn-outline-secondary btn-sm" href=".">@Loc["Layout_ReloadPage"]</a>
                     </div>
                 </ErrorContent>
             </ErrorBoundary>

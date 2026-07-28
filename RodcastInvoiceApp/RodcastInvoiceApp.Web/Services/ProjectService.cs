@@ -1,10 +1,12 @@
 using FluentValidation;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.Data;
 using RodcastInvoiceApp.Web.DataTransferObjects.Project;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Resources;
 using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
@@ -15,17 +17,20 @@ namespace RodcastInvoiceApp.Web.Services
         private readonly IValidator<ProjectCreateDto> _createValidator;
         private readonly IValidator<ProjectUpdateDto> _updateValidator;
         private readonly ICurrentUserAccessor _currentUser;
+        private readonly IStringLocalizer<SharedResource> _loc;
 
         public ProjectService(
             AppDbContext context,
             IValidator<ProjectCreateDto> createValidator,
             IValidator<ProjectUpdateDto> updateValidator,
-            ICurrentUserAccessor currentUser)
+            ICurrentUserAccessor currentUser,
+            IStringLocalizer<SharedResource> loc)
         {
             _context = context;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
             _currentUser = currentUser;
+            _loc = loc;
         }
 
         public async Task<IEnumerable<ProjectResponseDto>> GetAllAsync(int? clientId = null)
@@ -50,7 +55,7 @@ namespace RodcastInvoiceApp.Web.Services
                 .Include(p => p.Client)
                 .Include(p => p.PriceRules)
                 .FirstOrDefaultAsync(p => p.Id == id)
-                ?? throw new NotFoundException("Proyecto no encontrado.");
+                ?? throw new NotFoundException(_loc["SvcErr_ProjectNotFound"]);
 
             return project.Adapt<ProjectResponseDto>();
         }
@@ -62,7 +67,7 @@ namespace RodcastInvoiceApp.Web.Services
 
             var clientExists = await _context.Clients.AnyAsync(c => c.Id == dto.ClientId);
             if (!clientExists)
-                throw new NotFoundException("Cliente no encontrado.");
+                throw new NotFoundException(_loc["SvcErr_ClientNotFound"]);
 
             await ValidateUniqueCodeAsync(dto.ClientId, dto.Code);
 
@@ -81,7 +86,7 @@ namespace RodcastInvoiceApp.Web.Services
 
             var project = await _context.Projects
                 .FirstOrDefaultAsync(p => p.Id == id)
-                ?? throw new NotFoundException("Proyecto no encontrado.");
+                ?? throw new NotFoundException(_loc["SvcErr_ProjectNotFound"]);
 
             await ValidateUniqueCodeAsync(project.ClientId, dto.Code, id);
 
@@ -97,12 +102,12 @@ namespace RodcastInvoiceApp.Web.Services
 
             var project = await _context.Projects
                 .FirstOrDefaultAsync(p => p.Id == id)
-                ?? throw new NotFoundException("Proyecto no encontrado.");
+                ?? throw new NotFoundException(_loc["SvcErr_ProjectNotFound"]);
 
             var hasInvoices = await _context.Invoices.AnyAsync(i => i.ProjectId == id);
             if (hasInvoices)
                 throw new ConflictException(
-                    "No se puede eliminar el proyecto porque tiene facturas asociadas.");
+                    _loc["SvcErr_ProjectHasInvoices"]);
 
             _context.Projects.Remove(project);
             await _context.SaveChangesAsync();
@@ -123,7 +128,7 @@ namespace RodcastInvoiceApp.Web.Services
                             && (excludeId == null || p.Id != excludeId));
 
             if (codeExists)
-                throw new ConflictException("Ya existe un proyecto con ese código para este cliente.");
+                throw new ConflictException(_loc["SvcErr_ProjectDuplicateCode"]);
         }
     }
 }

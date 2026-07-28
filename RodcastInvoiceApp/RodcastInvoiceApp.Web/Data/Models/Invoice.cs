@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.Data.Common;
+using RodcastInvoiceApp.Web.Resources;
 
 namespace RodcastInvoiceApp.Web.Data.Models
 {
@@ -9,7 +11,23 @@ namespace RodcastInvoiceApp.Web.Data.Models
         Draft,
         Sent,
         Paid,
-        Overdue
+        // Reemplaza al viejo "Overdue": el correo con la factura quedo pedido
+        // pero todavia no lo aprobo el admin (ver InvoiceEmailApproval).
+        PendingApproval
+    }
+
+    public static class InvoiceStatusExtensions
+    {
+        // Recibe el localizador en vez de tener el texto fijo: asi el estado se
+        // traduce con el resto de la UI en vez de quedar siempre en un idioma.
+        public static string ToDisplayText(this InvoiceStatus status, IStringLocalizer<SharedResource> loc) => status switch
+        {
+            InvoiceStatus.Draft => loc["Status_Draft"],
+            InvoiceStatus.Sent => loc["Status_Sent"],
+            InvoiceStatus.Paid => loc["Status_Paid"],
+            InvoiceStatus.PendingApproval => loc["Status_PendingApproval"],
+            _ => status.ToString()
+        };
     }
 
     public class Invoice : BaseEntity
@@ -71,5 +89,6 @@ namespace RodcastInvoiceApp.Web.Data.Models
 
         public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
         public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+        public virtual ICollection<InvoiceEmailApproval> EmailApprovals { get; set; } = new List<InvoiceEmailApproval>();
     }
 }

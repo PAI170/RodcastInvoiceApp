@@ -41,6 +41,11 @@ namespace RodcastInvoiceApp.Web.DataTransferObjects.Invoice
         // (aunque sea sin ninguna excepcion, todo "Present").
         public bool HasTimesheet { get; set; }
 
+        // Motivo que dejo el admin la ultima vez que rechazo un pedido de envio de
+        // esta factura. Null si nunca se rechazo, o si ya se volvio a pedir envio
+        // despues del rechazo (la solicitud nueva "tapa" el comentario viejo).
+        public string? LastRejectionComment { get; set; }
+
         public List<InvoiceItemResponseDto> Items { get; set; } = new();
         public List<PaymentResponseDto> Payments { get; set; } = new();
 

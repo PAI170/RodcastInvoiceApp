@@ -1,6 +1,7 @@
 using FluentValidation;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.Billing;
 using RodcastInvoiceApp.Web.Data;
 using RodcastInvoiceApp.Web.Data.Models;
@@ -8,6 +9,7 @@ using RodcastInvoiceApp.Web.DataTransferObjects.Invoice;
 using RodcastInvoiceApp.Web.DataTransferObjects.Payment;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Resources;
 using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
@@ -19,19 +21,22 @@ namespace RodcastInvoiceApp.Web.Services
         private readonly IValidator<PaymentCreateDto> _paymentValidator;
         private readonly IEnumerable<IBillingStrategy> _billingStrategies;
         private readonly ICurrentUserAccessor _currentUser;
+        private readonly IStringLocalizer<SharedResource> _loc;
 
         public InvoiceService(
             AppDbContext context,
             IValidator<InvoiceCreateDto> invoiceValidator,
             IValidator<PaymentCreateDto> paymentValidator,
             IEnumerable<IBillingStrategy> billingStrategies,
-            ICurrentUserAccessor currentUser)
+            ICurrentUserAccessor currentUser,
+            IStringLocalizer<SharedResource> loc)
         {
             _context = context;
             _invoiceValidator = invoiceValidator;
             _paymentValidator = paymentValidator;
             _billingStrategies = billingStrategies;
             _currentUser = currentUser;
+            _loc = loc;
         }
 
         public async Task<IEnumerable<InvoiceResponseDto>> GetAllAsync(
@@ -62,7 +67,7 @@ namespace RodcastInvoiceApp.Web.Services
         {
             var invoice = await IncludeAll(_context.Invoices.AsNoTracking())
                 .FirstOrDefaultAsync(i => i.Id == id)
-                ?? throw new NotFoundException("Factura no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_InvoiceNotFound"]);
 
             return ToResponseDto(invoice);
         }
@@ -78,11 +83,11 @@ namespace RodcastInvoiceApp.Web.Services
                 .Include(p => p.Client)
                 .Include(p => p.PriceRules)
                 .FirstOrDefaultAsync(p => p.Id == dto.ProjectId)
-                ?? throw new NotFoundException("Proyecto no encontrado.");
+                ?? throw new NotFoundException(_loc["SvcErr_ProjectNotFound"]);
 
             var bankAccountExists = await _context.BankAccounts.AnyAsync(b => b.Id == dto.BankAccountId);
             if (!bankAccountExists)
-                throw new NotFoundException("Cuenta bancaria no encontrada.");
+                throw new NotFoundException(_loc["SvcErr_BankAccountNotFound"]);
 
             await EnsureInvoiceNumberIsUniqueAsync(dto.InvoiceNumber);
 
@@ -142,22 +147,22 @@ namespace RodcastInvoiceApp.Web.Services
                 .Include(i => i.InvoiceItems)
                 .Include(i => i.Payments)
                 .FirstOrDefaultAsync(i => i.Id == id)
-                ?? throw new NotFoundException("Factura no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_InvoiceNotFound"]);
 
             if (invoice.Status != InvoiceStatus.Draft || invoice.Payments.Any())
                 throw new ConflictException(
-                    "No se puede editar una factura que ya fue enviada, pagada, o que tiene pagos registrados.");
+                    _loc["SvcErr_InvoiceNotEditable"]);
 
             // El proyecto de una factura no se puede cambiar al editar (dto.ProjectId se ignora aqui).
             var project = await _context.Projects
                 .Include(p => p.Client)
                 .Include(p => p.PriceRules)
                 .FirstOrDefaultAsync(p => p.Id == invoice.ProjectId)
-                ?? throw new NotFoundException("Proyecto no encontrado.");
+                ?? throw new NotFoundException(_loc["SvcErr_ProjectNotFound"]);
 
             var bankAccountExists = await _context.BankAccounts.AnyAsync(b => b.Id == dto.BankAccountId);
             if (!bankAccountExists)
-                throw new NotFoundException("Cuenta bancaria no encontrada.");
+                throw new NotFoundException(_loc["SvcErr_BankAccountNotFound"]);
 
             await EnsureInvoiceNumberIsUniqueAsync(dto.InvoiceNumber, excludeInvoiceId: id);
 
@@ -206,11 +211,11 @@ namespace RodcastInvoiceApp.Web.Services
         {
             var invoice = await _context.Invoices
                 .FirstOrDefaultAsync(i => i.Id == id)
-                ?? throw new NotFoundException("Factura no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_InvoiceNotFound"]);
 
             // Una vez pagada, la factura queda cerrada: no se puede volver a cambiar el estado.
             if (invoice.Status == InvoiceStatus.Paid)
-                throw new ConflictException("Esta factura ya está pagada, no se puede cambiar su estado.");
+                throw new ConflictException(_loc["SvcErr_InvoiceAlreadyPaid"]);
 
             invoice.Status = status;
             await _context.SaveChangesAsync();
@@ -225,11 +230,11 @@ namespace RodcastInvoiceApp.Web.Services
             var invoice = await _context.Invoices
                 .Include(i => i.Payments)
                 .FirstOrDefaultAsync(i => i.Id == id)
-                ?? throw new NotFoundException("Factura no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_InvoiceNotFound"]);
 
             if (invoice.Status != InvoiceStatus.Draft || invoice.Payments.Any())
                 throw new ConflictException(
-                    "No se puede eliminar una factura que ya fue enviada, pagada, o que tiene pagos registrados.");
+                    _loc["SvcErr_InvoiceNotDeletable"]);
 
             _context.Invoices.Remove(invoice);
             await _context.SaveChangesAsync();
@@ -246,7 +251,7 @@ namespace RodcastInvoiceApp.Web.Services
                 .Include(i => i.InvoiceItems)
                 .Include(i => i.Payments)
                 .FirstOrDefaultAsync(i => i.Id == dto.InvoiceId)
-                ?? throw new NotFoundException("Factura no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_InvoiceNotFound"]);
 
             var payment = dto.Adapt<Payment>();
             _context.Payments.Add(payment);
@@ -271,10 +276,10 @@ namespace RodcastInvoiceApp.Web.Services
                 query = query.Where(i => i.Id != excludeInvoiceId);
 
             if (await query.AnyAsync())
-                throw new ConflictException($"Ya existe una factura con el número '{invoiceNumber}'.");
+                throw new ConflictException(_loc["SvcErr_InvoiceDuplicateNumber", invoiceNumber]);
         }
 
-        private static BillingInput BuildBillingInput(BillingType billingType, InvoiceCreateDto dto)
+        private BillingInput BuildBillingInput(BillingType billingType, InvoiceCreateDto dto)
         {
             switch (billingType)
             {
@@ -293,7 +298,7 @@ namespace RodcastInvoiceApp.Web.Services
                         || string.IsNullOrWhiteSpace(dto.City)
                         || string.IsNullOrWhiteSpace(dto.SlaType))
                         throw new BadRequestException(
-                            "Para un proyecto por ticket debes indicar número de ticket, ciudad y tipo de SLA.");
+                            _loc["SvcErr_TicketFieldsRequired"]);
 
                     return new PerTicketInput
                     {
@@ -315,7 +320,8 @@ namespace RodcastInvoiceApp.Web.Services
                 .Include(i => i.Project).ThenInclude(p => p.Client)
                 .Include(i => i.BankAccount)
                 .Include(i => i.InvoiceItems)
-                .Include(i => i.Payments);
+                .Include(i => i.Payments)
+                .Include(i => i.EmailApprovals);
         }
 
         private static InvoiceResponseDto ToResponseDto(Invoice invoice)
@@ -356,6 +362,13 @@ namespace RodcastInvoiceApp.Web.Services
                 WorkedDays = invoice.WorkedDays,
                 OvertimeHoursToInvoice = invoice.OvertimeHoursToInvoice,
                 HasTimesheet = invoice.TimesheetExceptions is not null,
+                // El motivo solo se muestra si la ULTIMA solicitud de esta factura fue
+                // un rechazo: si ya se volvio a pedir el envio, esa solicitud nueva
+                // (Pending o Approved) tapa el comentario del rechazo anterior.
+                LastRejectionComment = invoice.EmailApprovals.OrderByDescending(a => a.Id).FirstOrDefault()
+                    is { Status: EmailApprovalStatus.Rejected } latestApproval
+                        ? latestApproval.RejectionComment
+                        : null,
                 Items = invoice.InvoiceItems.Select(i => i.Adapt<InvoiceItemResponseDto>()).ToList(),
                 Payments = invoice.Payments.Select(p => p.Adapt<PaymentResponseDto>()).ToList(),
                 Subtotal = subtotal,

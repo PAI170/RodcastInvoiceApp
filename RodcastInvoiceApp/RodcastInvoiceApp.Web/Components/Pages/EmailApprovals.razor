@@ -1,0 +1,283 @@
+@page "/aprobaciones"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.Extensions.Localization
+@using RodcastInvoiceApp.Web.Data.Models
+@using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
+@using RodcastInvoiceApp.Web.Exceptions
+@using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Resources
+@using RodcastInvoiceApp.Web.Security
+@inject IInvoiceEmailApprovalService ApprovalService
+@inject UserManager<ApplicationUser> UserManager
+@inject IStringLocalizer<SharedResource> Loc
+
+<PageTitle>@Loc["Approvals_Title"]</PageTitle>
+
+<h1>@Loc["Approvals_Title"]</h1>
+<p class="text-muted">@Loc["Approvals_Description"]</p>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (successMessage is not null)
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (approvals is null)
+{
+    <p><em>@Loc["Common_Loading"]</em></p>
+}
+else if (approvals.Count == 0)
+{
+    <p>@Loc["Approvals_None"]</p>
+}
+else
+{
+    <div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>@Loc["Field_Invoice"]</th>
+                <th>@Loc["Field_Client"]</th>
+                <th>@Loc["Field_RequestedBy"]</th>
+                <th>@Loc["Field_Date"]</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in approvals)
+            {
+                <tr>
+                    <td>@item.InvoiceNumber</td>
+                    <td>@item.ClientName</td>
+                    <td>@item.RequestedByName</td>
+                    <td>@item.RequestedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>
+                        <button class="btn btn-outline-primary btn-sm" @onclick="() => OpenReview(item.ApprovalId)">@Loc["Approvals_Review"]</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+}
+
+@if (showReview)
+{
+    <div class="email-modal-backdrop" @onclick="CloseReview">
+        <div class="email-modal-content" @onclick:stopPropagation="true">
+            <div class="email-modal-header">
+                <strong>@Loc["Approvals_ReviewTitle"]</strong>
+                <button type="button" class="btn-close" aria-label="@Loc["Common_Close"]" @onclick="CloseReview"></button>
+            </div>
+            <div class="p-3">
+                @if (detail is null)
+                {
+                    <p><em>@Loc["Common_Loading"]</em></p>
+                }
+                else
+                {
+                    <dl class="row mb-3">
+                        <dt class="col-sm-3">@Loc["Field_Invoice"]</dt>
+                        <dd class="col-sm-9">@detail.InvoiceNumber — @detail.ClientName</dd>
+                        <dt class="col-sm-3">@Loc["Field_RequestedBy"]</dt>
+                        <dd class="col-sm-9">@detail.RequestedByName</dd>
+                        <dt class="col-sm-3">@Loc["Email_To"]</dt>
+                        <dd class="col-sm-9">@(detail.Preview.ToEmail ?? Loc["Email_NoEmailPlaceholder"])</dd>
+                        @if (detail.Preview.CcEmails.Count > 0)
+                        {
+                            <dt class="col-sm-3">@Loc["Field_Cc"]</dt>
+                            <dd class="col-sm-9">@string.Join(", ", detail.Preview.CcEmails)</dd>
+                        }
+                        <dt class="col-sm-3">@Loc["Field_Subject"]</dt>
+                        <dd class="col-sm-9">@detail.Preview.Subject</dd>
+                    </dl>
+
+                    <label class="form-label">@Loc["Approvals_PreviewLabel"]</label>
+                    <div class="border rounded p-3 mb-3" style="background: white; color: black;">
+                        @((MarkupString)EmailHtmlRenderer.BuildHtmlBody(detail.Preview.Body, detail.Preview.SignatureHtml))
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => ShowAttachment(detail.InvoiceId, false)">
+                            @Loc["Approvals_ViewInvoicePdf"]
+                        </button>
+                        @if (detail.Preview.IncludesTimesheet)
+                        {
+                            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => ShowAttachment(detail.InvoiceId, true)">
+                                @Loc["Approvals_ViewTimesheetPdf"]
+                            </button>
+                        }
+                    </div>
+
+                    @if (showRejectForm)
+                    {
+                        <label class="form-label">@Loc["Approvals_RejectionReasonLabel"]</label>
+                        <textarea class="form-control" rows="3" @bind="rejectComment" placeholder="@Loc["Approvals_RejectionPlaceholder"]"></textarea>
+                    }
+                }
+            </div>
+            <div class="p-3 border-top d-flex justify-content-end gap-2">
+                @if (showRejectForm)
+                {
+                    <button class="btn btn-secondary" @onclick="() => showRejectForm = false" disabled="@isProcessing">@Loc["Common_Cancel"]</button>
+                    <button class="btn btn-danger" @onclick="HandleReject" disabled="@isProcessing">
+                        @(isProcessing ? Loc["Approvals_Rejecting"] : Loc["Approvals_ConfirmReject"])
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-secondary" @onclick="CloseReview" disabled="@isProcessing">@Loc["Common_Close"]</button>
+                    <button class="btn btn-outline-danger" @onclick="() => showRejectForm = true" disabled="@(isProcessing || detail is null)">
+                        @Loc["Approvals_Reject"]
+                    </button>
+                    <button class="btn btn-primary" @onclick="HandleApprove" disabled="@(isProcessing || detail is null)">
+                        @(isProcessing ? Loc["Approvals_Approving"] : Loc["Approvals_Approve"])
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<PdfPreviewModal IsVisible="showPdfPreview" PdfUrl="@pdfPreviewUrl" Title="@pdfPreviewTitle" OnClose="() => showPdfPreview = false" />
+
+@code {
+    private List<InvoiceEmailApprovalListItemDto>? approvals;
+    private string? errorMessage;
+    private string? successMessage;
+
+    private bool showReview;
+    private InvoiceEmailApprovalDetailDto? detail;
+    private bool showRejectForm;
+    private string rejectComment = string.Empty;
+    private bool isProcessing;
+
+    private bool showPdfPreview;
+    private string? pdfPreviewUrl;
+    private string pdfPreviewTitle = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        errorMessage = null;
+        approvals = await ApprovalService.GetPendingAsync();
+    }
+
+    private async Task OpenReview(int approvalId)
+    {
+        errorMessage = null;
+        successMessage = null;
+        showReview = true;
+        showRejectForm = false;
+        rejectComment = string.Empty;
+        detail = null;
+
+        try
+        {
+            detail = await ApprovalService.GetDetailAsync(approvalId);
+        }
+        catch (Exception ex) when (ex is NotFoundException or ConflictException)
+        {
+            errorMessage = ex.Message;
+            showReview = false;
+            await LoadAsync();
+        }
+    }
+
+    private void CloseReview()
+    {
+        showReview = false;
+        showRejectForm = false;
+        detail = null;
+    }
+
+    private void ShowAttachment(int invoiceId, bool isTimesheet)
+    {
+        pdfPreviewUrl = isTimesheet ? $"/invoices/{invoiceId}/timesheet-pdf" : $"/invoices/{invoiceId}/pdf";
+        pdfPreviewTitle = isTimesheet ? Loc["Timesheet_PreviewModalTitle"] : Loc["Approvals_InvoicePreviewTitle"];
+        showPdfPreview = true;
+    }
+
+    private async Task HandleApprove()
+    {
+        if (detail is null)
+            return;
+
+        var reviewer = await GetCurrentUserAsync();
+        if (reviewer is null)
+            return;
+
+        isProcessing = true;
+        try
+        {
+            await ApprovalService.ApproveAsync(detail.ApprovalId, reviewer);
+            successMessage = Loc["Approvals_ApprovedMessage", detail.InvoiceNumber];
+            CloseReview();
+            await LoadAsync();
+        }
+        catch (Exception ex) when (ex is BadRequestException or NotFoundException or ConflictException)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (Exception)
+        {
+            errorMessage = Loc["Approvals_ApproveError"];
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task HandleReject()
+    {
+        if (detail is null)
+            return;
+
+        var reviewer = await GetCurrentUserAsync();
+        if (reviewer is null)
+            return;
+
+        isProcessing = true;
+        try
+        {
+            await ApprovalService.RejectAsync(detail.ApprovalId, reviewer, rejectComment);
+            successMessage = Loc["Approvals_RejectedMessage", detail.InvoiceNumber];
+            CloseReview();
+            await LoadAsync();
+        }
+        catch (Exception ex) when (ex is BadRequestException or NotFoundException or ConflictException)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (Exception)
+        {
+            errorMessage = Loc["Approvals_RejectError"];
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    [CascadingParameter]
+    private Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState>? AuthStateTask { get; set; }
+
+    private async Task<ApplicationUser?> GetCurrentUserAsync()
+    {
+        if (AuthStateTask is null)
+            return null;
+
+        var authState = await AuthStateTask;
+        return await UserManager.GetUserAsync(authState.User);
+    }
+}

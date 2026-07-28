@@ -1,28 +1,32 @@
 @page "/invoices"
 @attribute [Authorize]
+@using Microsoft.Extensions.Localization
+@using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
 @using RodcastInvoiceApp.Web.DataTransferObjects.Project
 @using RodcastInvoiceApp.Web.Exceptions
 @using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Resources
 @inject IInvoiceService InvoiceService
 @inject IProjectService ProjectService
+@inject IStringLocalizer<SharedResource> Loc
 
-<PageTitle>Facturas</PageTitle>
+<PageTitle>@Loc["Invoices_Title"]</PageTitle>
 
-<h1>Facturas</h1>
-<p><a class="btn btn-primary btn-sm" href="/invoices/new">+ Nueva factura</a></p>
+<h1>@Loc["Invoices_Title"]</h1>
+<p><a class="btn btn-primary btn-sm" href="/invoices/new">@Loc["Invoices_NewButton"]</a></p>
 
 @if (projects is null || invoices is null)
 {
-    <p><em>Cargando...</em></p>
+    <p><em>@Loc["Common_Loading"]</em></p>
 }
 else
 {
     <div class="row g-2 mb-3">
         <div class="col-md-3">
-            <label class="form-label">Filtrar por proyecto</label>
+            <label class="form-label">@Loc["Invoices_FilterByProject"]</label>
             <select class="form-select" @bind="selectedProjectId" @bind:after="LoadInvoicesAsync">
-                <option value="0">Todos los proyectos</option>
+                <option value="0">@Loc["Invoices_AllProjects"]</option>
                 @foreach (var project in projects)
                 {
                     <option value="@project.Id">@project.ClientName - @project.Name</option>
@@ -30,15 +34,15 @@ else
             </select>
         </div>
         <div class="col-md-2">
-            <label class="form-label">Desde</label>
+            <label class="form-label">@Loc["Invoices_FromDate"]</label>
             <input type="date" class="form-control" @bind="fromDate" @bind:after="LoadInvoicesAsync" />
         </div>
         <div class="col-md-2">
-            <label class="form-label">Hasta</label>
+            <label class="form-label">@Loc["Invoices_ToDate"]</label>
             <input type="date" class="form-control" @bind="toDate" @bind:after="LoadInvoicesAsync" />
         </div>
         <div class="col-md-2 d-flex align-items-end">
-            <button class="btn btn-outline-secondary" @onclick="ClearFilters">Limpiar filtros</button>
+            <button class="btn btn-outline-secondary" @onclick="ClearFilters">@Loc["Invoices_ClearFilters"]</button>
         </div>
     </div>
 
@@ -46,14 +50,14 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>No. Factura</th>
-                <th>Cliente / Proyecto</th>
-                <th>Fecha</th>
-                <th>Vencimiento</th>
-                <th>Estado</th>
-                <th>Total</th>
-                <th>Pagado</th>
-                <th>Saldo</th>
+                <th>@Loc["Invoices_InvoiceNumberFull"]</th>
+                <th>@Loc["Field_ClientProject"]</th>
+                <th>@Loc["Field_Date"]</th>
+                <th>@Loc["Field_DueDate"]</th>
+                <th>@Loc["Field_Status"]</th>
+                <th>@Loc["Field_Total"]</th>
+                <th>@Loc["Field_Paid"]</th>
+                <th>@Loc["Field_Balance"]</th>
                 <th></th>
             </tr>
         </thead>
@@ -65,12 +69,12 @@ else
                     <td>@invoice.ClientName / @invoice.ProjectName</td>
                     <td>@invoice.InvoiceDate.ToString("yyyy-MM-dd")</td>
                     <td>@invoice.DueDate.ToString("yyyy-MM-dd")</td>
-                    <td>@invoice.Status</td>
+                    <td>@invoice.Status.ToDisplayText(Loc)</td>
                     <td>@invoice.Total.ToString("0.00") @invoice.Currency</td>
                     <td>@invoice.AmountPaid.ToString("0.00")</td>
                     <td>@invoice.Balance.ToString("0.00")</td>
                     <td>
-                        <a class="btn btn-outline-primary btn-sm" href="@($"/invoices/{invoice.Id}")">Ver</a>
+                        <a class="btn btn-outline-primary btn-sm" href="@($"/invoices/{invoice.Id}")">@Loc["Common_View"]</a>
                     </td>
                 </tr>
             }

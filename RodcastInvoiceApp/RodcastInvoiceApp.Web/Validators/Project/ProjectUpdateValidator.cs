@@ -1,30 +1,32 @@
 using System.Text.Json;
 using FluentValidation;
+using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.DataTransferObjects.Project;
+using RodcastInvoiceApp.Web.Resources;
 
 namespace RodcastInvoiceApp.Web.Validators.Project
 {
     public class ProjectUpdateValidator : AbstractValidator<ProjectUpdateDto>
     {
-        public ProjectUpdateValidator()
+        public ProjectUpdateValidator(IStringLocalizer<SharedResource> loc)
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("El nombre del proyecto es obligatorio.")
-                .MaximumLength(150).WithMessage("El nombre no puede superar 150 caracteres.");
+                .NotEmpty().WithMessage(loc["Val_Required_ProjectName"])
+                .MaximumLength(150).WithMessage(loc["Val_MaxLength", 150]);
 
             RuleFor(x => x.Code)
-                .NotEmpty().WithMessage("El código del proyecto es obligatorio.")
-                .MaximumLength(50).WithMessage("El código no puede superar 50 caracteres.");
+                .NotEmpty().WithMessage(loc["Val_Required_ProjectCode"])
+                .MaximumLength(50).WithMessage(loc["Val_MaxLength", 50]);
 
             RuleFor(x => x.CostCenter)
-                .MaximumLength(50).WithMessage("El centro de costo no puede superar 50 caracteres.")
+                .MaximumLength(50).WithMessage(loc["Val_MaxLength", 50])
                 .When(x => !string.IsNullOrWhiteSpace(x.CostCenter));
 
             RuleFor(x => x.BillingType)
-                .IsInEnum().WithMessage("El tipo de cobro no es válido.");
+                .IsInEnum().WithMessage(loc["Val_Invalid_BillingType"]);
 
             RuleFor(x => x.Config)
-                .Must(BeValidJson).WithMessage("La configuración debe ser un JSON válido.");
+                .Must(BeValidJson).WithMessage(loc["Val_Invalid_Json"]);
         }
 
         private static bool BeValidJson(string config)

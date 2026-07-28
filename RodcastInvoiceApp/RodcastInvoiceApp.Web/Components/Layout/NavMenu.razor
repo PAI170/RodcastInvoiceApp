@@ -1,4 +1,15 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+@implements IDisposable
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using RodcastInvoiceApp.Web.Data.Models
+@using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Resources
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IInvoiceEmailApprovalService ApprovalService
+@inject IStringLocalizer<SharedResource> Loc
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center gap-2" href="">
             <img src="images/rodcast-logo.png" alt="Rodcast Solutions" style="height: 32px; width: 32px; object-fit: contain;" />
@@ -13,19 +24,19 @@
     <nav class="nav flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <i class="bi bi-house-door-fill me-2" aria-hidden="true"></i> Home
+                <i class="bi bi-house-door-fill me-2" aria-hidden="true"></i> @Loc["Nav_Home"]
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="clients">
-                <i class="bi bi-people-fill me-2" aria-hidden="true"></i> Clientes
+                <i class="bi bi-people-fill me-2" aria-hidden="true"></i> @Loc["Nav_Clients"]
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="projects">
-                <i class="bi bi-kanban-fill me-2" aria-hidden="true"></i> Proyectos
+                <i class="bi bi-kanban-fill me-2" aria-hidden="true"></i> @Loc["Nav_Projects"]
             </NavLink>
         </div>
 
@@ -33,13 +44,19 @@
             <Authorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="bank-accounts">
-                        <i class="bi bi-bank2 me-2" aria-hidden="true"></i> Cuentas Bancarias
+                        <i class="bi bi-bank2 me-2" aria-hidden="true"></i> @Loc["Nav_BankAccounts"]
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="company-settings">
-                        <i class="bi bi-building-gear me-2" aria-hidden="true"></i> Datos de la Empresa
+                        <i class="bi bi-building-gear me-2" aria-hidden="true"></i> @Loc["Nav_CompanySettings"]
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="aprobaciones">
+                        <i class="bi bi-envelope-check me-2" aria-hidden="true"></i> @Loc["Nav_Approvals"]
                     </NavLink>
                 </div>
             </Authorized>
@@ -47,7 +64,7 @@
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="invoices">
-                <i class="bi bi-receipt me-2" aria-hidden="true"></i> Facturas
+                <i class="bi bi-receipt me-2" aria-hidden="true"></i> @Loc["Nav_Invoices"]
             </NavLink>
         </div>
 
@@ -55,7 +72,7 @@
             <Authorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="users">
-                        <i class="bi bi-person-gear me-2" aria-hidden="true"></i> Usuarios
+                        <i class="bi bi-person-gear me-2" aria-hidden="true"></i> @Loc["Nav_Users"]
                     </NavLink>
                 </div>
             </Authorized>
@@ -64,35 +81,102 @@
 
     <AuthorizeView>
         <Authorized>
-            <div class="px-3 mt-4 mb-2 dropdown" onclick="event.stopPropagation()">
-                <button class="btn profile-toggle d-flex align-items-center gap-2 w-100" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                    <div class="profile-avatar">@GetInitial(context.User)</div>
-                    <span class="profile-name text-white text-truncate">@GetDisplayName(context.User)</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li><span class="dropdown-item-text small">@context.User.Identity?.Name</span></li>
-                    <li><hr class="dropdown-divider" /></li>
-                    <li>
-                        <a class="dropdown-item" href="/mi-correo">
-                            <i class="bi bi-gear me-2" aria-hidden="true"></i>Ajustes
-                        </a>
-                    </li>
-                    <li>
-                        <form method="post" action="/account/logout">
-                            <AntiforgeryToken />
-                            <button class="dropdown-item" type="submit">
-                                <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Cerrar sesión
-                            </button>
-                        </form>
-                    </li>
-                </ul>
+            <div class="px-3 mt-4 mb-2 d-flex align-items-center gap-2">
+                <div class="dropdown flex-grow-1" style="min-width: 0;" onclick="event.stopPropagation()">
+                    <button class="btn profile-toggle d-flex align-items-center gap-2 w-100" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="profile-avatar">@GetInitial(context.User)</div>
+                        <span class="profile-name text-white text-truncate">@GetDisplayName(context.User)</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><span class="dropdown-item-text small">@context.User.Identity?.Name</span></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li>
+                            <a class="dropdown-item" href="/ajustes">
+                                <i class="bi bi-gear me-2" aria-hidden="true"></i>@Loc["Nav_Settings"]
+                            </a>
+                        </li>
+                        <li>
+                            <form method="post" action="/account/logout">
+                                <AntiforgeryToken />
+                                <button class="dropdown-item" type="submit">
+                                    <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>@Loc["Nav_Logout"]
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+
+                @if (isAdmin)
+                {
+                    <a class="btn btn-link text-white position-relative p-1 flex-shrink-0" href="/aprobaciones"
+                       title="@Loc["Nav_PendingApprovalsTooltip"]">
+                        <i class="bi bi-bell-fill fs-5" aria-hidden="true"></i>
+                        @if (pendingApprovalCount > 0)
+                        {
+                            <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle">
+                                @pendingApprovalCount
+                            </span>
+                        }
+                    </a>
+                }
+
+                <a class="btn btn-outline-light btn-sm flex-shrink-0" href="@BuildCultureSwitchUrl()" title="ES / ENG">
+                    <i class="bi bi-translate me-1" aria-hidden="true"></i>@CurrentLanguageLabel
+                </a>
             </div>
         </Authorized>
     </AuthorizeView>
 </div>
 
 @code {
+    private bool isAdmin;
+    private int pendingApprovalCount;
+
+    private bool IsSpanish => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "es";
+
+    private string CurrentLanguageLabel => IsSpanish ? "ES" : "ENG";
+
+    // El boton muestra el idioma ACTUAL (no el destino): si la pagina esta en
+    // espanol dice "ES", en ingles dice "ENG". Es un <a href> normal, no
+    // NavigateTo, para que el browser haga una recarga real - Blazor Server no
+    // puede cambiar el idioma dentro del circuito ya abierto (ver /set-culture
+    // en Program.cs).
+    private string BuildCultureSwitchUrl()
+    {
+        var target = IsSpanish ? "en" : "es";
+        var returnUrl = new Uri(NavigationManager.Uri).PathAndQuery;
+        return $"/set-culture?uiCulture={target}&redirectUri={Uri.EscapeDataString(returnUrl)}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        isAdmin = authState.User.IsInRole(AppRoles.Admin);
+
+        if (isAdmin)
+            await RefreshPendingCountAsync();
+
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    // La campanita no se recrea al navegar entre paginas (vive en el layout), asi
+    // que sin esto el numero quedaria pegado al valor que tenia cuando se abrio el
+    // circuito, sin reflejar aprobaciones/rechazos hechos desde /aprobaciones.
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        if (!isAdmin)
+            return;
+
+        await RefreshPendingCountAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshPendingCountAsync()
+    {
+        pendingApprovalCount = await ApprovalService.GetPendingCountAsync();
+    }
+
     private static string GetDisplayName(System.Security.Claims.ClaimsPrincipal user) =>
         user.FindFirst("DisplayName")?.Value ?? user.Identity?.Name ?? "Usuario";
 
@@ -101,5 +185,9 @@
         var name = GetDisplayName(user);
         return name.Length > 0 ? name[0].ToString().ToUpperInvariant() : "?";
     }
-}
 
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

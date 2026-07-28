@@ -1,6 +1,7 @@
 @page "/invoices/new"
 @page "/invoices/{InvoiceId:int}/edit"
 @attribute [Authorize]
+@using Microsoft.Extensions.Localization
 @using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.BankAccount
 @using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
@@ -8,16 +9,18 @@
 @using RodcastInvoiceApp.Web.DataTransferObjects.Project
 @using RodcastInvoiceApp.Web.Exceptions
 @using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Resources
 @inject IInvoiceService InvoiceService
 @inject IProjectService ProjectService
 @inject IBankAccountService BankAccountService
 @inject IPriceRuleService PriceRuleService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IStringLocalizer<SharedResource> Loc
 
-<PageTitle>@(InvoiceId.HasValue ? "Editar Factura" : "Nueva Factura")</PageTitle>
+<PageTitle>@(InvoiceId.HasValue ? Loc["NewInvoice_EditTitle"] : Loc["NewInvoice_NewTitle"])</PageTitle>
 
-<h1>@(InvoiceId.HasValue ? "Editar Factura" : "Nueva Factura")</h1>
+<h1>@(InvoiceId.HasValue ? Loc["NewInvoice_EditTitle"] : Loc["NewInvoice_NewTitle"])</h1>
 
 @if (errorMessage is not null)
 {
@@ -27,16 +30,16 @@
 @if (createdInvoice is not null)
 {
     <div class="alert alert-success">
-        <p>Factura <strong>@createdInvoice.InvoiceNumber</strong> creada para @createdInvoice.ClientName / @createdInvoice.ProjectName.</p>
+        <p>@Loc["NewInvoice_Created", createdInvoice.InvoiceNumber, createdInvoice.ClientName, createdInvoice.ProjectName]</p>
         <div class="table-responsive">
         <table class="table table-sm">
             <thead>
                 <tr>
-                    <th>Descripción</th>
-                    <th>Cantidad</th>
-                    <th>Unidad</th>
-                    <th>Tarifa</th>
-                    <th>Monto</th>
+                    <th>@Loc["Field_Description"]</th>
+                    <th>@Loc["Field_Quantity"]</th>
+                    <th>@Loc["Field_Unit"]</th>
+                    <th>@Loc["Field_Rate"]</th>
+                    <th>@Loc["Field_Amount"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -54,39 +57,38 @@
         </table>
         </div>
         <p>
-            Subtotal: @createdInvoice.Subtotal.ToString("0.00") @createdInvoice.Currency<br />
-            IVA (@createdInvoice.VatPercent%): @createdInvoice.VatAmount.ToString("0.00") @createdInvoice.Currency<br />
-            <strong>Total: @createdInvoice.Total.ToString("0.00") @createdInvoice.Currency</strong>
+            @Loc["InvoiceDetail_Subtotal"]: @createdInvoice.Subtotal.ToString("0.00") @createdInvoice.Currency<br />
+            @Loc["InvoiceDetail_Vat"] (@createdInvoice.VatPercent%): @createdInvoice.VatAmount.ToString("0.00") @createdInvoice.Currency<br />
+            <strong>@Loc["Field_Total"]: @createdInvoice.Total.ToString("0.00") @createdInvoice.Currency</strong>
         </p>
-        <a class="btn btn-outline-primary btn-sm" href="/invoices">Ver todas las facturas</a>
+        <a class="btn btn-outline-primary btn-sm" href="/invoices">@Loc["NewInvoice_ViewAllInvoices"]</a>
     </div>
 }
 
 @if (projects is null || bankAccounts is null || isLoadingInvoice)
 {
-    <p><em>Cargando...</em></p>
+    <p><em>@Loc["Common_Loading"]</em></p>
 }
 else if (InvoiceId.HasValue && !canEditInvoice)
 {
-    <div class="alert alert-danger">No tenés permiso para editar facturas.</div>
-    <a class="btn btn-outline-secondary" href="/invoices">Volver a facturas</a>
+    <div class="alert alert-danger">@Loc["NewInvoice_NoPermission"]</div>
+    <a class="btn btn-outline-secondary" href="/invoices">@Loc["NewInvoice_BackToInvoices"]</a>
 }
 else
 {
     @if (InvoiceId.HasValue)
     {
         <p class="text-muted">
-            No se puede cambiar el proyecto de una factura ya creada. Si el proyecto está mal,
-            borra esta factura (si no tiene pagos registrados) y crea una nueva.
+            @Loc["NewInvoice_CannotChangeProject"]
         </p>
     }
 
     <EditForm Model="dto" FormName="InvoiceForm" OnValidSubmit="HandleSubmit">
         <div class="row g-2">
             <div class="col-md-3">
-                <label class="form-label">Proyecto</label>
+                <label class="form-label">@Loc["Field_Project"]</label>
                 <InputSelect class="form-select" @bind-Value="dto.ProjectId" @bind-Value:after="OnProjectChanged" disabled="@InvoiceId.HasValue">
-                    <option value="0">Selecciona un proyecto</option>
+                    <option value="0">@Loc["NewInvoice_SelectProject"]</option>
                     @foreach (var project in projects)
                     {
                         <option value="@project.Id">@project.ClientName - @project.Name</option>
@@ -94,9 +96,9 @@ else
                 </InputSelect>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Cuenta bancaria</label>
+                <label class="form-label">@Loc["InvoiceDetail_BankAccount"]</label>
                 <InputSelect class="form-select" @bind-Value="dto.BankAccountId">
-                    <option value="0">Selecciona una cuenta</option>
+                    <option value="0">@Loc["NewInvoice_SelectAccount"]</option>
                     @foreach (var account in bankAccounts)
                     {
                         <option value="@account.Id">@account.BankName (@account.Currency)</option>
@@ -104,75 +106,74 @@ else
                 </InputSelect>
             </div>
             <div class="col-md-2">
-                <label class="form-label">No. Factura</label>
+                <label class="form-label">@Loc["Invoices_InvoiceNumberFull"]</label>
                 <InputText class="form-control" @bind-Value="dto.InvoiceNumber" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Fecha factura</label>
+                <label class="form-label">@Loc["Field_Date"]</label>
                 <InputDate class="form-control" @bind-Value="dto.InvoiceDate" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Fecha vencimiento</label>
+                <label class="form-label">@Loc["Field_DueDate"]</label>
                 <InputDate class="form-control" @bind-Value="dto.DueDate" />
             </div>
         </div>
 
         <div class="row g-2 mt-1">
             <div class="col-md-2">
-                <label class="form-label">Moneda</label>
+                <label class="form-label">@Loc["Field_Currency"]</label>
                 <InputText class="form-control" @bind-Value="dto.Currency" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">% IVA</label>
+                <label class="form-label">@Loc["Field_VatPercent"]</label>
                 <InputNumber class="form-control" step="0.01" @bind-Value="dto.VatPercent" />
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <div class="form-check">
                     <InputCheckbox class="form-check-input" @bind-Value="dto.IsVatExonerated" />
-                    <label class="form-check-label">Exonerado de IVA</label>
+                    <label class="form-check-label">@Loc["NewInvoice_VatExonerated"]</label>
                 </div>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Método de pago (opcional)</label>
+                <label class="form-label">@Loc["NewInvoice_PaymentMethodOptional"]</label>
                 <InputText class="form-control" @bind-Value="dto.PaymentMethod" />
             </div>
         </div>
 
         @if (selectedProject is not null && selectedProject.BillingType == BillingType.MonthlyRetainer)
         {
-            <h3 class="mt-4">Datos del mes (Retainer mensual)</h3>
+            <h3 class="mt-4">@Loc["NewInvoice_MonthlyRetainerTitle"]</h3>
             <div class="row g-2">
                 <div class="col-md-2">
-                    <label class="form-label">Días de vacaciones</label>
+                    <label class="form-label">@Loc["NewInvoice_VacationDays"]</label>
                     <InputNumber class="form-control" @bind-Value="dto.VacationDays" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Días trabajados</label>
+                    <label class="form-label">@Loc["NewInvoice_WorkedDays"]</label>
                     <InputNumber class="form-control" @bind-Value="dto.WorkedDays" disabled="@(dto.VacationDays == 0)" />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Horas extra a facturar (mes anterior)</label>
+                    <label class="form-label">@Loc["NewInvoice_OvertimeHoursPrevMonth"]</label>
                     <InputNumber class="form-control" step="0.01" @bind-Value="dto.OvertimeHoursToInvoice" />
                 </div>
             </div>
             <p class="text-muted mt-1">
-                Si "Días de vacaciones" queda en 0, se factura el monto fijo del contrato.
-                Si es mayor a 0, se factura por horas realmente trabajadas.
+                @Loc["NewInvoice_MonthlyRetainerHelp"]
             </p>
         }
 
         @if (selectedProject is not null && selectedProject.BillingType == BillingType.PerTicket)
         {
-            <h3 class="mt-4">Datos del ticket</h3>
+            <h3 class="mt-4">@Loc["NewInvoice_TicketTitle"]</h3>
             <div class="row g-2">
                 <div class="col-md-2">
-                    <label class="form-label">No. de ticket</label>
+                    <label class="form-label">@Loc["NewInvoice_TicketNumber"]</label>
                     <InputText class="form-control" @bind-Value="dto.TicketNumber" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Ciudad</label>
+                    <label class="form-label">@Loc["Field_City"]</label>
                     <InputSelect class="form-select" @bind-Value="dto.City">
-                        <option value="">Selecciona</option>
+                        <option value="">@Loc["NewInvoice_Select"]</option>
                         @foreach (var city in AvailableCities)
                         {
                             <option value="@city">@city</option>
@@ -180,9 +181,9 @@ else
                     </InputSelect>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Tipo de SLA</label>
+                    <label class="form-label">@Loc["NewInvoice_SlaType"]</label>
                     <InputSelect class="form-select" @bind-Value="dto.SlaType">
-                        <option value="">Selecciona</option>
+                        <option value="">@Loc["NewInvoice_Select"]</option>
                         @foreach (var sla in AvailableSlaTypes)
                         {
                             <option value="@sla">@sla</option>
@@ -190,24 +191,23 @@ else
                     </InputSelect>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Duración del evento (horas)</label>
+                    <label class="form-label">@Loc["NewInvoice_EventDuration"]</label>
                     <InputNumber class="form-control" step="0.25" @bind-Value="ticketDurationHours" @bind-Value:after="OnDurationChanged" />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Horas extra</label>
+                    <label class="form-label">@Loc["NewInvoice_OvertimeHours"]</label>
                     <InputNumber class="form-control" step="0.01" @bind-Value="dto.OvertimeHoursToInvoice" />
                 </div>
             </div>
             <p class="text-muted mt-1">
-                La tarifa base incluye la primera hora. Tiempo adicional aprobado por el SDM: <strong>@AdditionalMinutesPreview min</strong>
-                (se factura en bloques de 15 min). Si el SDM no aprobó tiempo adicional, deja la duración en 1h o menos.
+                @Loc["NewInvoice_TicketHelp", AdditionalMinutesPreview]
             </p>
         }
 
         <button type="submit" class="btn btn-primary mt-3" disabled="@(dto.ProjectId == 0 || isSubmitting)">
-            @(InvoiceId.HasValue ? "Guardar cambios" : "Crear factura")
+            @(InvoiceId.HasValue ? Loc["NewInvoice_SaveChanges"] : Loc["NewInvoice_CreateInvoice"])
         </button>
-        <a class="btn btn-outline-secondary mt-3" href="@CancelUrl">Cancelar</a>
+        <a class="btn btn-outline-secondary mt-3" href="@CancelUrl">@Loc["Common_Cancel"]</a>
     </EditForm>
 }
 
@@ -340,7 +340,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
         finally
         {

@@ -1,19 +1,23 @@
 @page "/invoices/{InvoiceId:int}"
 @attribute [Authorize]
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.Extensions.Localization
 @using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
 @using RodcastInvoiceApp.Web.DataTransferObjects.Payment
 @using RodcastInvoiceApp.Web.Exceptions
 @using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Resources
 @inject IInvoiceService InvoiceService
 @inject IInvoiceEmailService InvoiceEmailService
+@inject IInvoiceEmailApprovalService InvoiceEmailApprovalService
 @inject UserManager<ApplicationUser> UserManager
 @inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Loc
 
-<PageTitle>Factura @invoice?.InvoiceNumber</PageTitle>
+<PageTitle>@Loc["InvoiceDetail_Title"] @invoice?.InvoiceNumber</PageTitle>
 
-<p><a href="/invoices">← Volver a facturas</a></p>
+<p><a href="/invoices">@Loc["InvoiceDetail_Back"]</a></p>
 
 @if (errorMessage is not null)
 {
@@ -27,18 +31,18 @@
 
 @if (invoice is null)
 {
-    <p><em>Cargando...</em></p>
+    <p><em>@Loc["Common_Loading"]</em></p>
 }
 else
 {
-    <h1>Factura @invoice.InvoiceNumber</h1>
+    <h1>@Loc["InvoiceDetail_Title"] @invoice.InvoiceNumber</h1>
     <p>
         <strong>@invoice.ClientName</strong> / @invoice.ProjectName<br />
-        Cuenta bancaria: @invoice.BankAccountName<br />
-        Fecha: @invoice.InvoiceDate.ToString("yyyy-MM-dd") — Vencimiento: @invoice.DueDate.ToString("yyyy-MM-dd")<br />
+        @Loc["InvoiceDetail_BankAccount"]: @invoice.BankAccountName<br />
+        @Loc["Field_Date"]: @invoice.InvoiceDate.ToString("yyyy-MM-dd") — @Loc["Field_DueDate"]: @invoice.DueDate.ToString("yyyy-MM-dd")<br />
         @if (!string.IsNullOrWhiteSpace(invoice.TicketNumber))
         {
-            <text>Ticket: @invoice.TicketNumber — @invoice.City / @invoice.SlaType<br /></text>
+            <text>@Loc["InvoiceDetail_Ticket"]: @invoice.TicketNumber — @invoice.City / @invoice.SlaType<br /></text>
         }
     </p>
 
@@ -46,11 +50,11 @@ else
     <table class="table table-sm">
         <thead>
             <tr>
-                <th>Descripción</th>
-                <th>Cantidad</th>
-                <th>Unidad</th>
-                <th>Tarifa</th>
-                <th>Monto</th>
+                <th>@Loc["Field_Description"]</th>
+                <th>@Loc["Field_Quantity"]</th>
+                <th>@Loc["Field_Unit"]</th>
+                <th>@Loc["Field_Rate"]</th>
+                <th>@Loc["Field_Amount"]</th>
             </tr>
         </thead>
         <tbody>
@@ -69,69 +73,82 @@ else
     </div>
 
     <p>
-        Subtotal: @invoice.Subtotal.ToString("0.00") @invoice.Currency<br />
-        IVA (@invoice.VatPercent%@(invoice.IsVatExonerated ? " - exonerado" : "")): @invoice.VatAmount.ToString("0.00") @invoice.Currency<br />
-        <strong>Total: @invoice.Total.ToString("0.00") @invoice.Currency</strong><br />
-        Pagado: @invoice.AmountPaid.ToString("0.00") — <strong>Saldo: @invoice.Balance.ToString("0.00")</strong>
+        @Loc["InvoiceDetail_Subtotal"]: @invoice.Subtotal.ToString("0.00") @invoice.Currency<br />
+        @Loc["InvoiceDetail_Vat"] (@invoice.VatPercent%@(invoice.IsVatExonerated ? $" - {Loc["InvoiceDetail_Exonerated"]}" : "")): @invoice.VatAmount.ToString("0.00") @invoice.Currency<br />
+        <strong>@Loc["Field_Total"]: @invoice.Total.ToString("0.00") @invoice.Currency</strong><br />
+        @Loc["Field_Paid"]: @invoice.AmountPaid.ToString("0.00") — <strong>@Loc["InvoiceDetail_Balance"]: @invoice.Balance.ToString("0.00")</strong>
     </p>
 
     @if (invoice.Status == InvoiceStatus.Paid)
     {
-        <p><strong>Estado: Pagada</strong> — ya no se puede cambiar el estado de esta factura.</p>
+        <p><strong>@Loc["InvoiceDetail_StatusPaid"]</strong> — @Loc["InvoiceDetail_PaidLocked"]</p>
+    }
+    else if (invoice.Status == InvoiceStatus.PendingApproval)
+    {
+        <p><strong>@Loc["InvoiceDetail_StatusPendingApproval"]</strong> — @Loc["InvoiceDetail_PendingApprovalHelp"]</p>
     }
     else
     {
         <div class="mb-3" style="max-width: 200px;">
-            <label class="form-label">Estado</label>
+            <label class="form-label">@Loc["Field_Status"]</label>
             <select class="form-select" @bind="selectedStatus">
-                <option value="@InvoiceStatus.Draft">Borrador</option>
-                <option value="@InvoiceStatus.Sent">Enviada</option>
-                <option value="@InvoiceStatus.Paid">Pagada</option>
-                <option value="@InvoiceStatus.Overdue">Vencida</option>
+                <option value="@InvoiceStatus.Draft">@Loc["Status_Draft"]</option>
+                <option value="@InvoiceStatus.Sent">@Loc["Status_Sent"]</option>
+                <option value="@InvoiceStatus.Paid">@Loc["Status_Paid"]</option>
             </select>
         </div>
     }
 
+    @if (!string.IsNullOrWhiteSpace(invoice.LastRejectionComment))
+    {
+        <button type="button" class="btn btn-outline-danger btn-sm mb-3" @onclick="() => showRejectionReason = true">
+            @Loc["InvoiceDetail_RejectionButton"]
+        </button>
+    }
+
     <div class="d-flex flex-wrap gap-2 mb-4">
-        @if (invoice.Status != InvoiceStatus.Paid)
+        @if (invoice.Status != InvoiceStatus.Paid && invoice.Status != InvoiceStatus.PendingApproval)
         {
-            <button class="btn btn-outline-primary btn-sm" @onclick="HandleUpdateStatus">Actualizar estado</button>
+            <button class="btn btn-outline-primary btn-sm" @onclick="HandleUpdateStatus">@Loc["InvoiceDetail_UpdateStatus"]</button>
         }
-        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowInvoicePreview">Ver Factura</button>
-        <a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}/pdf?download=true")" target="_blank">Descargar Factura</a>
-        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowEmailPreview">Enviar por correo</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowInvoicePreview">@Loc["InvoiceDetail_ViewInvoice"]</button>
+        <a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}/pdf?download=true")" target="_blank">@Loc["InvoiceDetail_DownloadInvoice"]</a>
+        @if (invoice.Status == InvoiceStatus.Draft)
+        {
+            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowEmailPreview">@Loc["InvoiceDetail_SendEmail"]</button>
+        }
         @if (invoice.HasTimesheet)
         {
-            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowTimesheetPreview">Ver Timesheet</button>
-            <a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}/timesheet-pdf?download=true")" target="_blank">Descargar Timesheet</a>
+            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ShowTimesheetPreview">@Loc["InvoiceDetail_ViewTimesheet"]</button>
+            <a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}/timesheet-pdf?download=true")" target="_blank">@Loc["InvoiceDetail_DownloadTimesheet"]</a>
         }
         <a class="btn btn-outline-secondary btn-sm" href="@($"/invoices/{invoice.Id}/timesheet")">
-            @(invoice.HasTimesheet ? "Editar Timesheet" : "Generar Timesheet")
+            @(invoice.HasTimesheet ? Loc["InvoiceDetail_EditTimesheet"] : Loc["InvoiceDetail_GenerateTimesheet"])
         </a>
         @if (invoice.CanEditOrDelete)
         {
             <AuthorizeView Roles="Admin">
                 <Authorized>
-                    <a class="btn btn-outline-primary btn-sm" href="@($"/invoices/{invoice.Id}/edit")">Editar</a>
-                    <button class="btn btn-outline-danger btn-sm" @onclick="HandleDelete">Eliminar factura</button>
+                    <a class="btn btn-outline-primary btn-sm" href="@($"/invoices/{invoice.Id}/edit")">@Loc["Common_Edit"]</a>
+                    <button class="btn btn-outline-danger btn-sm" @onclick="HandleDelete">@Loc["InvoiceDetail_DeleteInvoice"]</button>
                 </Authorized>
             </AuthorizeView>
         }
     </div>
     @if (!invoice.CanEditOrDelete)
     {
-        <p class="text-muted">Esta factura ya fue enviada, pagada, o tiene pagos registrados, así que no se puede editar ni eliminar.</p>
+        <p class="text-muted">@Loc["InvoiceDetail_CannotEditNote"]</p>
     }
 
-    <h2>Pagos</h2>
+    <h2>@Loc["InvoiceDetail_PaymentsTitle"]</h2>
     <div class="table-responsive">
     <table class="table table-sm">
         <thead>
             <tr>
-                <th>Fecha</th>
-                <th>Monto</th>
-                <th>Método</th>
-                <th>Notas</th>
+                <th>@Loc["Field_Date"]</th>
+                <th>@Loc["Field_Amount"]</th>
+                <th>@Loc["Field_Method"]</th>
+                <th>@Loc["Field_Notes"]</th>
             </tr>
         </thead>
         <tbody>
@@ -148,27 +165,27 @@ else
     </table>
     </div>
 
-    <h3>Registrar pago</h3>
+    <h3>@Loc["InvoiceDetail_RegisterPayment"]</h3>
     <EditForm Model="newPayment" FormName="NewPaymentForm" OnValidSubmit="HandleAddPayment">
         <div class="row g-2">
             <div class="col-md-2">
-                <label class="form-label">Fecha</label>
+                <label class="form-label">@Loc["Field_Date"]</label>
                 <InputDate class="form-control" @bind-Value="newPayment.PaymentDate" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Monto</label>
+                <label class="form-label">@Loc["Field_Amount"]</label>
                 <InputNumber class="form-control" step="0.01" @bind-Value="newPayment.Amount" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Método (opcional)</label>
+                <label class="form-label">@Loc["InvoiceDetail_MethodOptionalPlaceholder"]</label>
                 <InputText class="form-control" @bind-Value="newPayment.Method" />
             </div>
             <div class="col-md-4">
-                <label class="form-label">Notas (opcional)</label>
+                <label class="form-label">@Loc["InvoiceDetail_NotesOptionalPlaceholder"]</label>
                 <InputText class="form-control" @bind-Value="newPayment.Notes" />
             </div>
         </div>
-        <button type="submit" class="btn btn-primary mt-2">Registrar pago</button>
+        <button type="submit" class="btn btn-primary mt-2">@Loc["InvoiceDetail_RegisterPayment"]</button>
     </EditForm>
 }
 
@@ -176,6 +193,45 @@ else
 
 <EmailPreviewModal IsVisible="showEmailPreview" Preview="emailPreview" IsSending="isSendingEmail"
                    OnClose="CloseEmailPreview" OnConfirm="HandleSendEmail" />
+
+@if (showTimesheetWarning)
+{
+    <div class="email-modal-backdrop" @onclick="() => showTimesheetWarning = false">
+        <div class="email-modal-content" @onclick:stopPropagation="true">
+            <div class="email-modal-header">
+                <strong>@Loc["InvoiceDetail_TimesheetMissingTitle"]</strong>
+                <button type="button" class="btn-close" aria-label="@Loc["Common_Close"]" @onclick="() => showTimesheetWarning = false"></button>
+            </div>
+            <div class="p-3">
+                <p class="mb-0">
+                    @Loc["InvoiceDetail_TimesheetMissingBody"]
+                </p>
+            </div>
+            <div class="p-3 border-top d-flex justify-content-end gap-2">
+                <button class="btn btn-secondary" @onclick="() => showTimesheetWarning = false">@Loc["Common_Close"]</button>
+                <a class="btn btn-primary" href="@($"/invoices/{invoice!.Id}/timesheet")">@Loc["InvoiceDetail_GenerateTimesheet"]</a>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showRejectionReason)
+{
+    <div class="email-modal-backdrop" @onclick="() => showRejectionReason = false">
+        <div class="email-modal-content" @onclick:stopPropagation="true">
+            <div class="email-modal-header">
+                <strong>@Loc["InvoiceDetail_RejectionButton"]</strong>
+                <button type="button" class="btn-close" aria-label="@Loc["Common_Close"]" @onclick="() => showRejectionReason = false"></button>
+            </div>
+            <div class="p-3">
+                <p class="mb-0" style="white-space: pre-wrap;">@invoice!.LastRejectionComment</p>
+            </div>
+            <div class="p-3 border-top d-flex justify-content-end gap-2">
+                <button class="btn btn-secondary" @onclick="() => showRejectionReason = false">@Loc["Common_Close"]</button>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     [CascadingParameter]
@@ -197,6 +253,8 @@ else
     private bool showEmailPreview;
     private bool isSendingEmail;
     private InvoiceEmailPreviewDto? emailPreview;
+    private bool showTimesheetWarning;
+    private bool showRejectionReason;
 
     private void ShowPdfPreview(string url, string title)
     {
@@ -206,10 +264,10 @@ else
     }
 
     private void ShowInvoicePreview() =>
-        ShowPdfPreview($"/invoices/{invoice!.Id}/pdf", "Vista previa - Factura");
+        ShowPdfPreview($"/invoices/{invoice!.Id}/pdf", Loc["Approvals_InvoicePreviewTitle"]);
 
     private void ShowTimesheetPreview() =>
-        ShowPdfPreview($"/invoices/{invoice!.Id}/timesheet-pdf", "Vista previa - Timesheet");
+        ShowPdfPreview($"/invoices/{invoice!.Id}/timesheet-pdf", Loc["Timesheet_PreviewModalTitle"]);
 
     private void ClosePdfPreview()
     {
@@ -230,6 +288,13 @@ else
     {
         errorMessage = null;
         successMessage = null;
+
+        if (!invoice!.HasTimesheet)
+        {
+            showTimesheetWarning = true;
+            return;
+        }
+
         showEmailPreview = true;
         emailPreview = null;
 
@@ -255,17 +320,20 @@ else
         isSendingEmail = true;
         try
         {
-            await InvoiceEmailService.SendAsync(InvoiceId, currentUser);
+            invoice = await InvoiceEmailApprovalService.RequestSendAsync(InvoiceId, currentUser);
+            selectedStatus = invoice.Status;
             CloseEmailPreview();
-            successMessage = "Correo enviado.";
+            successMessage = invoice.Status == InvoiceStatus.PendingApproval
+                ? Loc["InvoiceDetail_EmailSentToApproval"]
+                : Loc["InvoiceDetail_EmailSent"];
         }
-        catch (Exception ex) when (ex is BadRequestException or NotFoundException)
+        catch (Exception ex) when (ex is BadRequestException or NotFoundException or ConflictException)
         {
             errorMessage = ex.Message;
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo enviar el correo. Revisá los datos en \"Mi correo\" e intentá de nuevo.";
+            errorMessage = Loc["InvoiceDetail_EmailSendError"];
         }
         finally
         {
@@ -298,7 +366,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 
@@ -316,7 +384,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 
@@ -334,7 +402,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 }

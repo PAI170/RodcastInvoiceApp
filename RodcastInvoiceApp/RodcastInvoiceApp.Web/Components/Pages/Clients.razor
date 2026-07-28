@@ -1,13 +1,16 @@
 @page "/clients"
 @attribute [Authorize]
+@using Microsoft.Extensions.Localization
 @using RodcastInvoiceApp.Web.DataTransferObjects.Client
 @using RodcastInvoiceApp.Web.Exceptions
 @using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Resources
 @inject IClientService ClientService
+@inject IStringLocalizer<SharedResource> Loc
 
-<PageTitle>Clientes</PageTitle>
+<PageTitle>@Loc["Clients_Title"]</PageTitle>
 
-<h1>Clientes</h1>
+<h1>@Loc["Clients_Title"]</h1>
 
 @if (errorMessage is not null)
 {
@@ -16,7 +19,7 @@
 
 @if (clients is null)
 {
-    <p><em>Cargando...</em></p>
+    <p><em>@Loc["Common_Loading"]</em></p>
 }
 else
 {
@@ -24,14 +27,14 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Nombre</th>
-                <th>Dirección</th>
-                <th>Email</th>
-                <th>VAT ID</th>
-                <th>País</th>
-                <th>Moneda</th>
-                <th>ID de proveedor</th>
-                <th>Proyectos</th>
+                <th>@Loc["Field_Name"]</th>
+                <th>@Loc["Field_Address"]</th>
+                <th>@Loc["Field_Email"]</th>
+                <th>@Loc["Field_VatId"]</th>
+                <th>@Loc["Field_Country"]</th>
+                <th>@Loc["Field_Currency"]</th>
+                <th>@Loc["Field_SupplierId"]</th>
+                <th>@Loc["Field_Projects"]</th>
                 <th></th>
             </tr>
         </thead>
@@ -50,8 +53,8 @@ else
                         <td><input class="form-control" @bind="editingDto.SupplierIdAssigned" /></td>
                         <td>@client.ProjectCount</td>
                         <td>
-                            <button class="btn btn-primary btn-sm" @onclick="HandleUpdate">Guardar</button>
-                            <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancelar</button>
+                            <button class="btn btn-primary btn-sm" @onclick="HandleUpdate">@Loc["Common_Save"]</button>
+                            <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">@Loc["Common_Cancel"]</button>
                         </td>
                     </tr>
                 }
@@ -69,8 +72,8 @@ else
                         <td>
                             <AuthorizeView Roles="Admin">
                                 <Authorized>
-                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(client)">Editar</button>
-                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(client.Id)">Eliminar</button>
+                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(client)">@Loc["Common_Edit"]</button>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(client.Id)">@Loc["Common_Delete"]</button>
                                 </Authorized>
                             </AuthorizeView>
                         </td>
@@ -84,33 +87,33 @@ else
 
 <AuthorizeView Roles="Admin" Context="authContext">
     <Authorized>
-        <h2>Nuevo cliente</h2>
+        <h2>@Loc["Clients_New"]</h2>
 
         <EditForm Model="newClient" FormName="NewClientForm" OnValidSubmit="HandleCreate">
             <div class="row g-2">
                 <div class="col-md-3">
-                    <InputText class="form-control" placeholder="Nombre" @bind-Value="newClient.Name" />
+                    <InputText class="form-control" placeholder="@Loc["Field_Name"]" @bind-Value="newClient.Name" />
                 </div>
                 <div class="col-md-3">
-                    <InputText class="form-control" placeholder="Dirección" @bind-Value="newClient.Address" />
+                    <InputText class="form-control" placeholder="@Loc["Field_Address"]" @bind-Value="newClient.Address" />
                 </div>
                 <div class="col-md-3">
-                    <InputText class="form-control" type="email" placeholder="Email (opcional)" @bind-Value="newClient.Email" />
+                    <InputText class="form-control" type="email" placeholder="@Loc["Clients_EmailOptionalPlaceholder"]" @bind-Value="newClient.Email" />
                 </div>
                 <div class="col-md-2">
-                    <InputText class="form-control" placeholder="VAT ID" @bind-Value="newClient.VatId" />
+                    <InputText class="form-control" placeholder="@Loc["Field_VatId"]" @bind-Value="newClient.VatId" />
                 </div>
                 <div class="col-md-2">
-                    <InputText class="form-control" placeholder="País" @bind-Value="newClient.Country" />
+                    <InputText class="form-control" placeholder="@Loc["Field_Country"]" @bind-Value="newClient.Country" />
                 </div>
                 <div class="col-md-2">
-                    <InputText class="form-control" placeholder="Moneda" @bind-Value="newClient.DefaultCurrency" />
+                    <InputText class="form-control" placeholder="@Loc["Field_Currency"]" @bind-Value="newClient.DefaultCurrency" />
                 </div>
                 <div class="col-md-3">
-                    <InputText class="form-control" placeholder="ID de proveedor asignado (opcional)" @bind-Value="newClient.SupplierIdAssigned" />
+                    <InputText class="form-control" placeholder="@Loc["Clients_SupplierIdOptionalPlaceholder"]" @bind-Value="newClient.SupplierIdAssigned" />
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary mt-2">Crear cliente</button>
+            <button type="submit" class="btn btn-primary mt-2">@Loc["Clients_CreateButton"]</button>
         </EditForm>
     </Authorized>
 </AuthorizeView>
@@ -147,7 +150,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 
@@ -189,7 +192,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 
@@ -207,7 +210,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 }

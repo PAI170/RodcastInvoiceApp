@@ -1,46 +1,48 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.DataTransferObjects.Invoice;
+using RodcastInvoiceApp.Web.Resources;
 
 namespace RodcastInvoiceApp.Web.Validators.Invoice
 {
     public class InvoiceCreateValidator : AbstractValidator<InvoiceCreateDto>
     {
-        public InvoiceCreateValidator()
+        public InvoiceCreateValidator(IStringLocalizer<SharedResource> loc)
         {
             RuleFor(x => x.ProjectId)
-                .GreaterThan(0).WithMessage("Debes seleccionar un proyecto.");
+                .GreaterThan(0).WithMessage(loc["Val_Select_Project"]);
 
             RuleFor(x => x.BankAccountId)
-                .GreaterThan(0).WithMessage("Debes seleccionar una cuenta bancaria.");
+                .GreaterThan(0).WithMessage(loc["Val_Select_BankAccount"]);
 
             RuleFor(x => x.InvoiceNumber)
-                .NotEmpty().WithMessage("El número de factura es obligatorio.")
-                .MaximumLength(50).WithMessage("No puede superar 50 caracteres.");
+                .NotEmpty().WithMessage(loc["Val_Required_InvoiceNumber"])
+                .MaximumLength(50).WithMessage(loc["Val_MaxLength", 50]);
 
             RuleFor(x => x.DueDate)
                 .GreaterThanOrEqualTo(x => x.InvoiceDate)
-                .WithMessage("La fecha de vencimiento no puede ser anterior a la fecha de la factura.");
+                .WithMessage(loc["Val_DueDate_BeforeInvoiceDate"]);
 
             RuleFor(x => x.Currency)
-                .NotEmpty().WithMessage("La moneda es obligatoria.")
-                .Length(3).WithMessage("La moneda debe tener 3 caracteres (ej. USD).");
+                .NotEmpty().WithMessage(loc["Val_Currency_Required"])
+                .Length(3).WithMessage(loc["Val_Currency_Length"]);
 
             RuleFor(x => x.VatPercent)
-                .InclusiveBetween(0, 100).WithMessage("El porcentaje de IVA debe estar entre 0 y 100.");
+                .InclusiveBetween(0, 100).WithMessage(loc["Val_VatPercent_Range"]);
 
             RuleFor(x => x.VacationDays)
-                .GreaterThanOrEqualTo(0).WithMessage("Los días de vacaciones no pueden ser negativos.");
+                .GreaterThanOrEqualTo(0).WithMessage(loc["Val_VacationDays_Negative"]);
 
             RuleFor(x => x.WorkedDays)
-                .GreaterThanOrEqualTo(0).WithMessage("Los días trabajados no pueden ser negativos.")
-                .GreaterThan(0).WithMessage("Si hubo días de vacaciones, indica cuántos días se trabajó.")
+                .GreaterThanOrEqualTo(0).WithMessage(loc["Val_WorkedDays_Negative"])
+                .GreaterThan(0).WithMessage(loc["Val_WorkedDays_RequiredWithVacation"])
                 .When(x => x.VacationDays > 0);
 
             RuleFor(x => x.OvertimeHoursToInvoice)
-                .GreaterThanOrEqualTo(0).WithMessage("Las horas extra no pueden ser negativas.");
+                .GreaterThanOrEqualTo(0).WithMessage(loc["Val_OvertimeHours_Negative"]);
 
             RuleFor(x => x.ApprovedAdditionalMinutes)
-                .GreaterThanOrEqualTo(0).WithMessage("Los minutos adicionales no pueden ser negativos.");
+                .GreaterThanOrEqualTo(0).WithMessage(loc["Val_AdditionalMinutes_Negative"]);
         }
     }
 }

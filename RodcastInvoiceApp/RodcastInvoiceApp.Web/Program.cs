@@ -1,9 +1,11 @@
+using System.Globalization;
 using FluentValidation;
 using Mapster;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using RodcastInvoiceApp.Web.Billing;
 using RodcastInvoiceApp.Web.Components;
@@ -23,6 +25,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Idiomas: es/en globales para los TEXTOS de la UI (UICulture). La Culture que
+// controla formato de numeros/fechas queda fija en en-US siempre, sin importar
+// el idioma elegido - asi los montos en pantalla y en el PDF de facturas/timesheets
+// nunca cambian de formato (1234.56, nunca 1234,56) al tocar el switch ES/ENG.
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new RequestCulture(culture: "en-US", uiCulture: "en");
+    options.SupportedCultures = new[] { new CultureInfo("en-US") };
+    options.SupportedUICultures = new[] { new CultureInfo("en"), new CultureInfo("es") };
+    // El default ya incluye un CookieRequestCultureProvider que lee la cookie
+    // ".AspNetCore.Culture" - /set-culture (mas abajo) es lo unico que la escribe.
+});
+
 // Login/Logout usan Razor Pages clasicas: necesitan escribir la cookie de
 // autenticacion en una respuesta HTTP normal, algo que no se puede hacer
 // dentro de un circuito interactivo de Blazor Server (SignalR).
@@ -39,8 +55,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, new MariaDbServerVersion(new Version(10, 6, 0))));
 
 // Data Protection: sin persistir la clave, un reinicio del contenedor invalida
-// las cookies de sesion Y las contraseñas SMTP encriptadas por usuario (Users.razor
-// "Mi correo"). "keys" debe montarse como volumen en Docker para sobrevivir.
+// las cookies de sesion Y las contraseñas SMTP encriptadas por usuario (pagina
+// "Ajustes"). "keys" debe montarse como volumen en Docker para sobrevivir.
 var dataProtectionPath = builder.Configuration["DataProtection:KeysPath"];
 if (!string.IsNullOrWhiteSpace(dataProtectionPath))
 {
@@ -124,6 +140,7 @@ builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<IInvoicePdfService, InvoicePdfService>();
 builder.Services.AddScoped<ITimesheetService, TimesheetService>();
 builder.Services.AddScoped<IInvoiceEmailService, InvoiceEmailService>();
+builder.Services.AddScoped<IInvoiceEmailApprovalService, InvoiceEmailApprovalService>();
 
 // Billing strategies: cada una se registra por separado y se resuelven todas
 // como IEnumerable<IBillingStrategy> en InvoiceService.
@@ -143,6 +160,30 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Siembra las firmas HTML fijas una sola vez (solo si el usuario ya existe y
+// todavia no tiene una firma guardada, para no pisar lo que cargue despues a mano).
+using (var scope = app.Services.CreateScope())
+{
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+    async Task SeedSignatureAsync(string email, string signatureHtml)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+        if (user is not null && string.IsNullOrWhiteSpace(user.EmailSignatureHtml))
+        {
+            user.EmailSignatureHtml = signatureHtml;
+            await userManager.UpdateAsync(user);
+        }
+    }
+
+    await SeedSignatureAsync(
+        RodcastInvoiceApp.Web.Data.Seed.EmailSignatureSeedData.DavidRodriguezEmail,
+        RodcastInvoiceApp.Web.Data.Seed.EmailSignatureSeedData.DavidRodriguezHtml);
+    await SeedSignatureAsync(
+        RodcastInvoiceApp.Web.Data.Seed.EmailSignatureSeedData.DanielaCastroEmail,
+        RodcastInvoiceApp.Web.Data.Seed.EmailSignatureSeedData.DanielaCastroHtml);
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -152,6 +193,8 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
+
+app.UseRequestLocalization();
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -186,6 +229,21 @@ app.MapGet("/invoices/{id:int}/pdf", async (int id, HttpContext httpContext, IIn
     var disposition = download ? "attachment" : "inline";
     httpContext.Response.Headers.ContentDisposition = $"{disposition}; filename=\"Invoice-{invoice.InvoiceNumber}.pdf\"";
     return Results.File(bytes, "application/pdf");
+});
+
+// Blazor Server no puede cambiar el idioma "en caliente" dentro del circuito
+// activo: hay que recargar la pagina para que el nuevo request (y el circuito
+// nuevo que arranca con el) tome la cookie de cultura actualizada. El boton del
+// navbar apunta aca con un <a href> normal (no NavigateTo), asi el browser hace
+// una recarga real en vez de una navegacion dentro del circuito.
+app.MapGet("/set-culture", (string uiCulture, string redirectUri, HttpContext httpContext) =>
+{
+    httpContext.Response.Cookies.Append(
+        CookieRequestCultureProvider.DefaultCookieName,
+        CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture: "en-US", uiCulture: uiCulture)),
+        new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true });
+
+    return Results.LocalRedirect(redirectUri);
 });
 
 app.MapGet("/invoices/{id:int}/timesheet-pdf", async (int id, HttpContext httpContext, ITimesheetService timesheetService, bool download = false) =>

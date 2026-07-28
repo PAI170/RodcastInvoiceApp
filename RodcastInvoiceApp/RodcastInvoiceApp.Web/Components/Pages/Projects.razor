@@ -1,16 +1,19 @@
 @page "/projects"
 @attribute [Authorize]
+@using Microsoft.Extensions.Localization
 @using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.Client
 @using RodcastInvoiceApp.Web.DataTransferObjects.Project
 @using RodcastInvoiceApp.Web.Exceptions
 @using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Resources
 @inject IProjectService ProjectService
 @inject IClientService ClientService
+@inject IStringLocalizer<SharedResource> Loc
 
-<PageTitle>Proyectos</PageTitle>
+<PageTitle>@Loc["Projects_Title"]</PageTitle>
 
-<h1>Proyectos</h1>
+<h1>@Loc["Projects_Title"]</h1>
 
 @if (errorMessage is not null)
 {
@@ -19,14 +22,14 @@
 
 @if (clients is null || projects is null)
 {
-    <p><em>Cargando...</em></p>
+    <p><em>@Loc["Common_Loading"]</em></p>
 }
 else
 {
     <div class="mb-3" style="max-width: 300px;">
-        <label class="form-label">Filtrar por cliente</label>
+        <label class="form-label">@Loc["Projects_FilterByClient"]</label>
         <select class="form-select" @bind="selectedClientId" @bind:after="LoadProjectsAsync">
-            <option value="0">Todos los clientes</option>
+            <option value="0">@Loc["Projects_AllClients"]</option>
             @foreach (var client in clients)
             {
                 <option value="@client.Id">@client.Name</option>
@@ -38,13 +41,13 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Cliente</th>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Centro de costo</th>
-                <th>Tipo de cobro</th>
-                <th>Activo</th>
-                <th>Tarifas</th>
+                <th>@Loc["Field_Client"]</th>
+                <th>@Loc["Field_Code"]</th>
+                <th>@Loc["Field_Name"]</th>
+                <th>@Loc["Field_CostCenter"]</th>
+                <th>@Loc["Field_BillingType"]</th>
+                <th>@Loc["Field_Active"]</th>
+                <th>@Loc["Field_Rates"]</th>
                 <th></th>
             </tr>
         </thead>
@@ -60,15 +63,15 @@ else
                         <td><input class="form-control" @bind="editingDto.CostCenter" /></td>
                         <td>
                             <select class="form-select" @bind="editingDto.BillingType">
-                                <option value="@BillingType.MonthlyRetainer">Retainer mensual</option>
-                                <option value="@BillingType.PerTicket">Por ticket</option>
+                                <option value="@BillingType.MonthlyRetainer">@Loc["Billing_MonthlyRetainer"]</option>
+                                <option value="@BillingType.PerTicket">@Loc["Billing_PerTicket"]</option>
                             </select>
                         </td>
                         <td><input type="checkbox" @bind="editingDto.IsActive" /></td>
                         <td>@project.PriceRuleCount</td>
                         <td>
-                            <button class="btn btn-primary btn-sm" @onclick="HandleUpdate">Guardar</button>
-                            <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancelar</button>
+                            <button class="btn btn-primary btn-sm" @onclick="HandleUpdate">@Loc["Common_Save"]</button>
+                            <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">@Loc["Common_Cancel"]</button>
                         </td>
                     </tr>
                 }
@@ -79,15 +82,15 @@ else
                         <td>@project.Code</td>
                         <td>@project.Name</td>
                         <td>@project.CostCenter</td>
-                        <td>@(project.BillingType == BillingType.MonthlyRetainer ? "Retainer mensual" : "Por ticket")</td>
-                        <td>@(project.IsActive ? "Sí" : "No")</td>
+                        <td>@(project.BillingType == BillingType.MonthlyRetainer ? Loc["Billing_MonthlyRetainer"] : Loc["Billing_PerTicket"])</td>
+                        <td>@(project.IsActive ? Loc["Common_Yes"] : Loc["Common_No"])</td>
                         <td>@project.PriceRuleCount</td>
                         <td>
                             <AuthorizeView Roles="Admin">
                                 <Authorized>
-                                    <a class="btn btn-outline-secondary btn-sm" href="@($"/projects/{project.Id}/price-rules")">Tarifas</a>
-                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(project)">Editar</button>
-                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(project.Id)">Eliminar</button>
+                                    <a class="btn btn-outline-secondary btn-sm" href="@($"/projects/{project.Id}/price-rules")">@Loc["Field_Rates"]</a>
+                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(project)">@Loc["Common_Edit"]</button>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => HandleDelete(project.Id)">@Loc["Common_Delete"]</button>
                                 </Authorized>
                             </AuthorizeView>
                         </td>
@@ -100,13 +103,13 @@ else
 
     <AuthorizeView Roles="Admin" Context="authContext">
         <Authorized>
-            <h2>Nuevo proyecto</h2>
+            <h2>@Loc["Projects_New"]</h2>
 
             <EditForm Model="newProject" FormName="NewProjectForm" OnValidSubmit="HandleCreate">
                 <div class="row g-2">
                     <div class="col-md-2">
                         <InputSelect class="form-select" @bind-Value="newProject.ClientId">
-                            <option value="0">Selecciona un cliente</option>
+                            <option value="0">@Loc["Projects_SelectClient"]</option>
                             @foreach (var client in clients)
                             {
                                 <option value="@client.Id">@client.Name</option>
@@ -114,25 +117,25 @@ else
                         </InputSelect>
                     </div>
                     <div class="col-md-2">
-                        <InputText class="form-control" placeholder="Código" @bind-Value="newProject.Code" />
+                        <InputText class="form-control" placeholder="@Loc["Field_Code"]" @bind-Value="newProject.Code" />
                     </div>
                     <div class="col-md-2">
-                        <InputText class="form-control" placeholder="Nombre" @bind-Value="newProject.Name" />
+                        <InputText class="form-control" placeholder="@Loc["Field_Name"]" @bind-Value="newProject.Name" />
                     </div>
                     <div class="col-md-2">
-                        <InputText class="form-control" placeholder="Centro de costo (opcional)" @bind-Value="newProject.CostCenter" />
+                        <InputText class="form-control" placeholder="@Loc["Projects_CostCenterOptionalPlaceholder"]" @bind-Value="newProject.CostCenter" />
                     </div>
                     <div class="col-md-2">
                         <InputSelect class="form-select" @bind-Value="newProject.BillingType">
-                            <option value="@BillingType.MonthlyRetainer">Retainer mensual</option>
-                            <option value="@BillingType.PerTicket">Por ticket</option>
+                            <option value="@BillingType.MonthlyRetainer">@Loc["Billing_MonthlyRetainer"]</option>
+                            <option value="@BillingType.PerTicket">@Loc["Billing_PerTicket"]</option>
                         </InputSelect>
                     </div>
                     <div class="col-md-2">
-                        <InputTextArea class="form-control" placeholder="Config (JSON)" @bind-Value="newProject.Config" />
+                        <InputTextArea class="form-control" placeholder="@Loc["Projects_ConfigPlaceholder"]" @bind-Value="newProject.Config" />
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary mt-2">Crear proyecto</button>
+                <button type="submit" class="btn btn-primary mt-2">@Loc["Projects_CreateButton"]</button>
             </EditForm>
         </Authorized>
     </AuthorizeView>
@@ -174,7 +177,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 
@@ -215,7 +218,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 
@@ -233,7 +236,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 }

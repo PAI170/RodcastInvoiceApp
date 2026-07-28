@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Common -->
+  <data name="Common_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Common_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Common_Loading" xml:space="preserve"><value>Loading...</value></data>
+  <data name="Common_GenericError" xml:space="preserve"><value>Couldn't complete the action. Try again in a few seconds.</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Common_View" xml:space="preserve"><value>View</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Common_No" xml:space="preserve"><value>No</value></data>
+
+  <!-- Shared field labels -->
+  <data name="Field_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Field_Country" xml:space="preserve"><value>Country</value></data>
+  <data name="Field_Projects" xml:space="preserve"><value>Projects</value></data>
+  <data name="Field_InvoiceNo" xml:space="preserve"><value>No.</value></data>
+  <data name="Field_ClientProject" xml:space="preserve"><value>Client / Project</value></data>
+  <data name="Field_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Field_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Field_Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Field_Address" xml:space="preserve"><value>Address</value></data>
+  <data name="Field_Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Field_VatId" xml:space="preserve"><value>VAT ID</value></data>
+  <data name="Field_Currency" xml:space="preserve"><value>Currency</value></data>
+  <data name="Field_SupplierId" xml:space="preserve"><value>Supplier ID</value></data>
+  <data name="Field_Client" xml:space="preserve"><value>Client</value></data>
+  <data name="Field_Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Field_CostCenter" xml:space="preserve"><value>Cost center</value></data>
+  <data name="Field_BillingType" xml:space="preserve"><value>Billing type</value></data>
+  <data name="Field_Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Field_Rates" xml:space="preserve"><value>Rates</value></data>
+  <data name="Field_Dimension1" xml:space="preserve"><value>Dimension 1</value></data>
+  <data name="Field_Dimension2" xml:space="preserve"><value>Dimension 2</value></data>
+  <data name="Field_Rate" xml:space="preserve"><value>Rate</value></data>
+  <data name="Field_Label" xml:space="preserve"><value>Label</value></data>
+  <data name="Field_Bank" xml:space="preserve"><value>Bank</value></data>
+  <data name="Field_Holder" xml:space="preserve"><value>Account holder</value></data>
+  <data name="Field_AccountNo" xml:space="preserve"><value>Account No.</value></data>
+  <data name="Field_Iban" xml:space="preserve"><value>IBAN</value></data>
+  <data name="Field_Swift" xml:space="preserve"><value>SWIFT</value></data>
+  <data name="Field_TaxId" xml:space="preserve"><value>Tax ID</value></data>
+  <data name="Field_Role" xml:space="preserve"><value>Role</value></data>
+  <data name="Field_Project" xml:space="preserve"><value>Project</value></data>
+  <data name="Field_VatPercent" xml:space="preserve"><value>VAT %</value></data>
+  <data name="Field_City" xml:space="preserve"><value>City</value></data>
+  <data name="Field_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Field_Quantity" xml:space="preserve"><value>Quantity</value></data>
+  <data name="Field_Unit" xml:space="preserve"><value>Unit</value></data>
+  <data name="Field_Amount" xml:space="preserve"><value>Amount</value></data>
+  <data name="Field_Method" xml:space="preserve"><value>Method</value></data>
+  <data name="Field_Notes" xml:space="preserve"><value>Notes</value></data>
+  <data name="Field_DueDate" xml:space="preserve"><value>Due date</value></data>
+  <data name="Field_Paid" xml:space="preserve"><value>Paid</value></data>
+  <data name="Field_Balance" xml:space="preserve"><value>Balance</value></data>
+  <data name="Field_Invoice" xml:space="preserve"><value>Invoice</value></data>
+  <data name="Field_RequestedBy" xml:space="preserve"><value>Requested by</value></data>
+  <data name="Field_Subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="Field_Cc" xml:space="preserve"><value>CC</value></data>
+
+  <!-- Email fields (shared: EmailPreviewModal + EmailApprovals review) -->
+  <data name="Email_To" xml:space="preserve"><value>To</value></data>
+  <data name="Email_NoEmailPlaceholder" xml:space="preserve"><value>(no email)</value></data>
+
+  <!-- Invoice status -->
+  <data name="Status_Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Status_Sent" xml:space="preserve"><value>Sent</value></data>
+  <data name="Status_Paid" xml:space="preserve"><value>Paid</value></data>
+  <data name="Status_PendingApproval" xml:space="preserve"><value>Pending Approval</value></data>
+
+  <!-- Billing type -->
+  <data name="Billing_MonthlyRetainer" xml:space="preserve"><value>Monthly retainer</value></data>
+  <data name="Billing_PerTicket" xml:space="preserve"><value>Per ticket</value></data>
+
+  <!-- NavMenu -->
+  <data name="Nav_Home" xml:space="preserve"><value>Home</value></data>
+  <data name="Nav_Clients" xml:space="preserve"><value>Clients</value></data>
+  <data name="Nav_Projects" xml:space="preserve"><value>Projects</value></data>
+  <data name="Nav_BankAccounts" xml:space="preserve"><value>Bank Accounts</value></data>
+  <data name="Nav_CompanySettings" xml:space="preserve"><value>Company Details</value></data>
+  <data name="Nav_Approvals" xml:space="preserve"><value>Approvals</value></data>
+  <data name="Nav_Invoices" xml:space="preserve"><value>Invoices</value></data>
+  <data name="Nav_Users" xml:space="preserve"><value>Users</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Nav_Logout" xml:space="preserve"><value>Log out</value></data>
+  <data name="Nav_PendingApprovalsTooltip" xml:space="preserve"><value>Pending approvals</value></data>
+
+  <!-- MainLayout -->
+  <data name="Layout_ErrorTitle" xml:space="preserve"><value>An unexpected error occurred.</value></data>
+  <data name="Layout_ErrorBody" xml:space="preserve"><value>This might be a temporary database connection issue. Try again in a few seconds.</value></data>
+  <data name="Layout_Retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="Layout_ReloadPage" xml:space="preserve"><value>Reload page</value></data>
+
+  <!-- NotFound -->
+  <data name="NotFound_Title" xml:space="preserve"><value>Not Found</value></data>
+  <data name="NotFound_Body" xml:space="preserve"><value>Sorry, the content you are looking for does not exist.</value></data>
+
+  <!-- Home -->
+  <data name="Home_Title" xml:space="preserve"><value>Invoicing System</value></data>
+  <data name="Home_ViewAll" xml:space="preserve"><value>View all</value></data>
+  <data name="Home_NoClientsYet" xml:space="preserve"><value>No clients registered yet.</value></data>
+  <data name="Home_RecentInvoices" xml:space="preserve"><value>Recent invoices</value></data>
+  <data name="Home_NoInvoicesYet" xml:space="preserve"><value>No invoices created yet.</value></data>
+
+  <!-- Clients -->
+  <data name="Clients_Title" xml:space="preserve"><value>Clients</value></data>
+  <data name="Clients_New" xml:space="preserve"><value>New client</value></data>
+  <data name="Clients_EmailOptionalPlaceholder" xml:space="preserve"><value>Email (optional)</value></data>
+  <data name="Clients_SupplierIdOptionalPlaceholder" xml:space="preserve"><value>Assigned supplier ID (optional)</value></data>
+  <data name="Clients_CreateButton" xml:space="preserve"><value>Create client</value></data>
+
+  <!-- Projects -->
+  <data name="Projects_Title" xml:space="preserve"><value>Projects</value></data>
+  <data name="Projects_FilterByClient" xml:space="preserve"><value>Filter by client</value></data>
+  <data name="Projects_AllClients" xml:space="preserve"><value>All clients</value></data>
+  <data name="Projects_New" xml:space="preserve"><value>New project</value></data>
+  <data name="Projects_SelectClient" xml:space="preserve"><value>Select a client</value></data>
+  <data name="Projects_CostCenterOptionalPlaceholder" xml:space="preserve"><value>Cost center (optional)</value></data>
+  <data name="Projects_ConfigPlaceholder" xml:space="preserve"><value>Config (JSON)</value></data>
+  <data name="Projects_CreateButton" xml:space="preserve"><value>Create project</value></data>
+
+  <!-- PriceRules -->
+  <data name="PriceRules_Title" xml:space="preserve"><value>Rates</value></data>
+  <data name="PriceRules_BackToProjects" xml:space="preserve"><value>← Back to projects</value></data>
+  <data name="PriceRules_New" xml:space="preserve"><value>New rate</value></data>
+  <data name="PriceRules_Dim1Placeholder" xml:space="preserve"><value>Dimension 1 (e.g. city)</value></data>
+  <data name="PriceRules_Dim2Placeholder" xml:space="preserve"><value>Dimension 2 (optional, e.g. SLA)</value></data>
+  <data name="PriceRules_LabelOptionalPlaceholder" xml:space="preserve"><value>Label (optional)</value></data>
+  <data name="PriceRules_CreateButton" xml:space="preserve"><value>Create rate</value></data>
+
+  <!-- BankAccounts -->
+  <data name="BankAccounts_Title" xml:space="preserve"><value>Bank Accounts</value></data>
+  <data name="BankAccounts_New" xml:space="preserve"><value>New account</value></data>
+  <data name="BankAccounts_CreateButton" xml:space="preserve"><value>Create account</value></data>
+
+  <!-- CompanySettingsPage -->
+  <data name="CompanySettings_Title" xml:space="preserve"><value>Company Details</value></data>
+  <data name="CompanySettings_Description" xml:space="preserve"><value>This data is used to generate the invoice PDF (name, address, Tax ID, logo, signature).</value></data>
+  <data name="CompanySettings_LogoPath" xml:space="preserve"><value>Logo path (optional)</value></data>
+  <data name="CompanySettings_SignaturePath" xml:space="preserve"><value>Signature path (optional)</value></data>
+  <data name="CompanySettings_Saved" xml:space="preserve"><value>Saved.</value></data>
+
+  <!-- Users -->
+  <data name="Users_Title" xml:space="preserve"><value>Users</value></data>
+  <data name="Users_NewPasswordFor" xml:space="preserve"><value>New password for</value></data>
+  <data name="Users_PasswordMinPlaceholder" xml:space="preserve"><value>Minimum 6 characters</value></data>
+  <data name="Users_Locked" xml:space="preserve"><value>Locked</value></data>
+  <data name="Users_Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Users_ResetPassword" xml:space="preserve"><value>Reset password</value></data>
+  <data name="Users_Unlock" xml:space="preserve"><value>Unlock access</value></data>
+  <data name="Users_Lock" xml:space="preserve"><value>Lock access</value></data>
+  <data name="Users_You" xml:space="preserve"><value>(you)</value></data>
+  <data name="Users_New" xml:space="preserve"><value>New user</value></data>
+  <data name="Users_PasswordPlaceholder" xml:space="preserve"><value>Password (minimum 6 characters)</value></data>
+  <data name="Users_CreateButton" xml:space="preserve"><value>Create user</value></data>
+  <data name="Users_PasswordTooShort" xml:space="preserve"><value>Password must be at least 6 characters.</value></data>
+  <data name="Users_NoRole" xml:space="preserve"><value>(no role)</value></data>
+
+  <!-- SettingsPage (Ajustes) -->
+  <data name="Settings_Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_Description" xml:space="preserve"><value>Your personal settings: the email invoices are sent from (same one you use in Roundcube) and the signature added to those emails.</value></data>
+  <data name="Settings_SmtpSection" xml:space="preserve"><value>Email (SMTP)</value></data>
+  <data name="Settings_Host" xml:space="preserve"><value>SMTP server (host)</value></data>
+  <data name="Settings_Port" xml:space="preserve"><value>Port</value></data>
+  <data name="Settings_YourEmail" xml:space="preserve"><value>Your email</value></data>
+  <data name="Settings_Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Settings_PasswordHelp" xml:space="preserve"><value>Leave blank to keep it unchanged.</value></data>
+  <data name="Settings_SignatureSection" xml:space="preserve"><value>Email signature</value></data>
+  <data name="Settings_SignatureLabel" xml:space="preserve"><value>Signature (HTML or plain text)</value></data>
+  <data name="Settings_SignatureHelp" xml:space="preserve"><value>Paste your signature's HTML (e.g. exported from Outlook) as-is, or write plain text if you don't have a formatted signature — either way it gets added below the message on every invoice email you send. Leave blank to add no signature.</value></data>
+  <data name="Settings_Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="Settings_NotConfiguredPlaceholder" xml:space="preserve"><value>not set</value></data>
+
+  <!-- Invoices list -->
+  <data name="Invoices_Title" xml:space="preserve"><value>Invoices</value></data>
+  <data name="Invoices_NewButton" xml:space="preserve"><value>+ New invoice</value></data>
+  <data name="Invoices_FilterByProject" xml:space="preserve"><value>Filter by project</value></data>
+  <data name="Invoices_AllProjects" xml:space="preserve"><value>All projects</value></data>
+  <data name="Invoices_FromDate" xml:space="preserve"><value>From</value></data>
+  <data name="Invoices_ToDate" xml:space="preserve"><value>To</value></data>
+  <data name="Invoices_ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Invoices_InvoiceNumberFull" xml:space="preserve"><value>Invoice No.</value></data>
+
+  <!-- InvoiceDetail -->
+  <data name="InvoiceDetail_Title" xml:space="preserve"><value>Invoice</value></data>
+  <data name="InvoiceDetail_Back" xml:space="preserve"><value>← Back to invoices</value></data>
+  <data name="InvoiceDetail_BankAccount" xml:space="preserve"><value>Bank account</value></data>
+  <data name="InvoiceDetail_Ticket" xml:space="preserve"><value>Ticket</value></data>
+  <data name="InvoiceDetail_Subtotal" xml:space="preserve"><value>Subtotal</value></data>
+  <data name="InvoiceDetail_Vat" xml:space="preserve"><value>VAT</value></data>
+  <data name="InvoiceDetail_Exonerated" xml:space="preserve"><value>exonerated</value></data>
+  <data name="InvoiceDetail_Balance" xml:space="preserve"><value>Balance</value></data>
+  <data name="InvoiceDetail_StatusPaid" xml:space="preserve"><value>Status: Paid</value></data>
+  <data name="InvoiceDetail_PaidLocked" xml:space="preserve"><value>this invoice's status can no longer be changed.</value></data>
+  <data name="InvoiceDetail_StatusPendingApproval" xml:space="preserve"><value>Status: Pending Approval</value></data>
+  <data name="InvoiceDetail_PendingApprovalHelp" xml:space="preserve"><value>the invoice email is waiting for an admin to approve it.</value></data>
+  <data name="InvoiceDetail_RejectionButton" xml:space="preserve"><value>Rejection Reason</value></data>
+  <data name="InvoiceDetail_UpdateStatus" xml:space="preserve"><value>Update status</value></data>
+  <data name="InvoiceDetail_ViewInvoice" xml:space="preserve"><value>View Invoice</value></data>
+  <data name="InvoiceDetail_DownloadInvoice" xml:space="preserve"><value>Download Invoice</value></data>
+  <data name="InvoiceDetail_SendEmail" xml:space="preserve"><value>Send by email</value></data>
+  <data name="InvoiceDetail_ViewTimesheet" xml:space="preserve"><value>View Timesheet</value></data>
+  <data name="InvoiceDetail_DownloadTimesheet" xml:space="preserve"><value>Download Timesheet</value></data>
+  <data name="InvoiceDetail_EditTimesheet" xml:space="preserve"><value>Edit Timesheet</value></data>
+  <data name="InvoiceDetail_GenerateTimesheet" xml:space="preserve"><value>Generate Timesheet</value></data>
+  <data name="InvoiceDetail_DeleteInvoice" xml:space="preserve"><value>Delete invoice</value></data>
+  <data name="InvoiceDetail_CannotEditNote" xml:space="preserve"><value>This invoice was already sent, paid, or has payments recorded, so it can't be edited or deleted.</value></data>
+  <data name="InvoiceDetail_PaymentsTitle" xml:space="preserve"><value>Payments</value></data>
+  <data name="InvoiceDetail_RegisterPayment" xml:space="preserve"><value>Register payment</value></data>
+  <data name="InvoiceDetail_MethodOptionalPlaceholder" xml:space="preserve"><value>Method (optional)</value></data>
+  <data name="InvoiceDetail_NotesOptionalPlaceholder" xml:space="preserve"><value>Notes (optional)</value></data>
+  <data name="InvoiceDetail_TimesheetMissingTitle" xml:space="preserve"><value>Timesheet missing</value></data>
+  <data name="InvoiceDetail_TimesheetMissingBody" xml:space="preserve"><value>You haven't generated this invoice's timesheet yet. Generate it before sending the email, so it goes attached along with the invoice.</value></data>
+  <data name="InvoiceDetail_EmailSentToApproval" xml:space="preserve"><value>Email sent for approval. An admin will review it before it goes out.</value></data>
+  <data name="InvoiceDetail_EmailSent" xml:space="preserve"><value>Email sent.</value></data>
+  <data name="InvoiceDetail_EmailSendError" xml:space="preserve"><value>Couldn't send the email. Check your details in "Settings" and try again.</value></data>
+
+  <!-- NewInvoice -->
+  <data name="NewInvoice_EditTitle" xml:space="preserve"><value>Edit Invoice</value></data>
+  <data name="NewInvoice_NewTitle" xml:space="preserve"><value>New Invoice</value></data>
+  <data name="NewInvoice_Created" xml:space="preserve"><value>Invoice {0} created for {1} / {2}.</value></data>
+  <data name="NewInvoice_ViewAllInvoices" xml:space="preserve"><value>View all invoices</value></data>
+  <data name="NewInvoice_NoPermission" xml:space="preserve"><value>You don't have permission to edit invoices.</value></data>
+  <data name="NewInvoice_BackToInvoices" xml:space="preserve"><value>Back to invoices</value></data>
+  <data name="NewInvoice_CannotChangeProject" xml:space="preserve"><value>You can't change the project of an already-created invoice. If the project is wrong, delete this invoice (if it has no payments recorded) and create a new one.</value></data>
+  <data name="NewInvoice_SelectProject" xml:space="preserve"><value>Select a project</value></data>
+  <data name="NewInvoice_SelectAccount" xml:space="preserve"><value>Select an account</value></data>
+  <data name="NewInvoice_VatExonerated" xml:space="preserve"><value>VAT exonerated</value></data>
+  <data name="NewInvoice_PaymentMethodOptional" xml:space="preserve"><value>Payment method (optional)</value></data>
+  <data name="NewInvoice_MonthlyRetainerTitle" xml:space="preserve"><value>Month details (Monthly retainer)</value></data>
+  <data name="NewInvoice_VacationDays" xml:space="preserve"><value>Vacation days</value></data>
+  <data name="NewInvoice_WorkedDays" xml:space="preserve"><value>Worked days</value></data>
+  <data name="NewInvoice_OvertimeHoursPrevMonth" xml:space="preserve"><value>Overtime hours to invoice (previous month)</value></data>
+  <data name="NewInvoice_MonthlyRetainerHelp" xml:space="preserve"><value>If "Vacation days" stays at 0, the fixed contract amount is invoiced. If it's greater than 0, hours actually worked are invoiced.</value></data>
+  <data name="NewInvoice_TicketTitle" xml:space="preserve"><value>Ticket details</value></data>
+  <data name="NewInvoice_TicketNumber" xml:space="preserve"><value>Ticket No.</value></data>
+  <data name="NewInvoice_Select" xml:space="preserve"><value>Select</value></data>
+  <data name="NewInvoice_SlaType" xml:space="preserve"><value>SLA type</value></data>
+  <data name="NewInvoice_EventDuration" xml:space="preserve"><value>Event duration (hours)</value></data>
+  <data name="NewInvoice_OvertimeHours" xml:space="preserve"><value>Overtime hours</value></data>
+  <data name="NewInvoice_TicketHelp" xml:space="preserve"><value>The base rate includes the first hour. Additional time approved by the SDM: {0} min (billed in 15-min blocks). If the SDM didn't approve additional time, leave the duration at 1h or less.</value></data>
+  <data name="NewInvoice_SaveChanges" xml:space="preserve"><value>Save changes</value></data>
+  <data name="NewInvoice_CreateInvoice" xml:space="preserve"><value>Create invoice</value></data>
+
+  <!-- InvoiceTimesheet (chrome only - the day grid/categories always stay English, shared with the PDF) -->
+  <data name="Timesheet_BackToInvoice" xml:space="preserve"><value>← Back to invoice</value></data>
+  <data name="Timesheet_Legend" xml:space="preserve"><value>Legend</value></data>
+  <data name="Timesheet_Saved" xml:space="preserve"><value>Timesheet saved.</value></data>
+  <data name="Timesheet_PreviewModalTitle" xml:space="preserve"><value>Preview - Timesheet</value></data>
+
+  <!-- EmailApprovals -->
+  <data name="Approvals_Title" xml:space="preserve"><value>Pending Approvals</value></data>
+  <data name="Approvals_Description" xml:space="preserve"><value>Invoice emails requested by other users, waiting for your approval or rejection.</value></data>
+  <data name="Approvals_None" xml:space="preserve"><value>No pending approval emails.</value></data>
+  <data name="Approvals_Review" xml:space="preserve"><value>Review</value></data>
+  <data name="Approvals_ReviewTitle" xml:space="preserve"><value>Review submission</value></data>
+  <data name="Approvals_PreviewLabel" xml:space="preserve"><value>Email preview</value></data>
+  <data name="Approvals_ViewInvoicePdf" xml:space="preserve"><value>View Invoice (PDF)</value></data>
+  <data name="Approvals_ViewTimesheetPdf" xml:space="preserve"><value>View Timesheet (PDF)</value></data>
+  <data name="Approvals_RejectionReasonLabel" xml:space="preserve"><value>Rejection reason</value></data>
+  <data name="Approvals_RejectionPlaceholder" xml:space="preserve"><value>What needs fixing...</value></data>
+  <data name="Approvals_ConfirmReject" xml:space="preserve"><value>Confirm rejection</value></data>
+  <data name="Approvals_Rejecting" xml:space="preserve"><value>Rejecting...</value></data>
+  <data name="Approvals_Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="Approvals_Approve" xml:space="preserve"><value>Approve and send</value></data>
+  <data name="Approvals_Approving" xml:space="preserve"><value>Approving...</value></data>
+  <data name="Approvals_ApprovedMessage" xml:space="preserve"><value>Invoice {0} approved and sent.</value></data>
+  <data name="Approvals_RejectedMessage" xml:space="preserve"><value>Invoice {0} rejected. Back to Draft.</value></data>
+  <data name="Approvals_ApproveError" xml:space="preserve"><value>Couldn't approve the submission. Try again in a few seconds.</value></data>
+  <data name="Approvals_RejectError" xml:space="preserve"><value>Couldn't reject the submission. Try again in a few seconds.</value></data>
+  <data name="Approvals_InvoicePreviewTitle" xml:space="preserve"><value>Preview - Invoice</value></data>
+
+  <!-- Service-layer errors (BadRequestException/ConflictException/NotFoundException) -->
+  <data name="SvcErr_BankAccountNotFound" xml:space="preserve"><value>Bank account not found.</value></data>
+  <data name="SvcErr_BankAccountHasInvoices" xml:space="preserve"><value>Can't delete the bank account because it has invoices associated with it.</value></data>
+  <data name="SvcErr_ClientNotFound" xml:space="preserve"><value>Client not found.</value></data>
+  <data name="SvcErr_ClientHasProjects" xml:space="preserve"><value>Can't delete the client because it has projects associated with it.</value></data>
+  <data name="SvcErr_ClientDuplicateName" xml:space="preserve"><value>A client with that name already exists.</value></data>
+  <data name="SvcErr_ClientDuplicateVatId" xml:space="preserve"><value>A client with that VAT ID already exists.</value></data>
+  <data name="SvcErr_ProjectNotFound" xml:space="preserve"><value>Project not found.</value></data>
+  <data name="SvcErr_ProjectHasInvoices" xml:space="preserve"><value>Can't delete the project because it has invoices associated with it.</value></data>
+  <data name="SvcErr_ProjectDuplicateCode" xml:space="preserve"><value>A project with that code already exists for this client.</value></data>
+  <data name="SvcErr_PriceRuleNotFound" xml:space="preserve"><value>Rate not found.</value></data>
+  <data name="SvcErr_InvoiceNotFound" xml:space="preserve"><value>Invoice not found.</value></data>
+  <data name="SvcErr_InvoiceNotEditable" xml:space="preserve"><value>Can't edit an invoice that was already sent, paid, or has payments recorded.</value></data>
+  <data name="SvcErr_InvoiceAlreadyPaid" xml:space="preserve"><value>This invoice is already paid, its status can't be changed.</value></data>
+  <data name="SvcErr_InvoiceNotDeletable" xml:space="preserve"><value>Can't delete an invoice that was already sent, paid, or has payments recorded.</value></data>
+  <data name="SvcErr_InvoiceDuplicateNumber" xml:space="preserve"><value>An invoice with the number '{0}' already exists.</value></data>
+  <data name="SvcErr_TicketFieldsRequired" xml:space="preserve"><value>For a per-ticket project you must provide the ticket number, city, and SLA type.</value></data>
+  <data name="SvcErr_TimesheetInvalidDay" xml:space="preserve"><value>Day {0} is not valid for this month.</value></data>
+  <data name="SvcErr_TimesheetWeekend" xml:space="preserve"><value>Day {0} is a weekend, it can't be marked.</value></data>
+  <data name="SvcErr_EmailSenderNotConfigured" xml:space="preserve"><value>Set up your email in "Settings" before you can send invoices.</value></data>
+  <data name="SvcErr_ClientNoEmail" xml:space="preserve"><value>The client doesn't have an email set up.</value></data>
+  <data name="SvcErr_TimesheetNotGenerated" xml:space="preserve"><value>You haven't generated this invoice's timesheet yet.</value></data>
+  <data name="SvcErr_ApprovalAlreadyPending" xml:space="preserve"><value>This invoice already has a submission pending approval.</value></data>
+  <data name="SvcErr_RejectionCommentRequired" xml:space="preserve"><value>Write the rejection reason so the person knows what to fix.</value></data>
+  <data name="SvcErr_ApprovalNotFound" xml:space="preserve"><value>Approval request not found.</value></data>
+  <data name="SvcErr_ApprovalAlreadyReviewed" xml:space="preserve"><value>This request was already reviewed.</value></data>
+  <data name="SvcErr_Forbidden" xml:space="preserve"><value>You don't have permission to perform this action.</value></data>
+
+  <!-- Validators (FluentValidation) -->
+  <data name="Val_MaxLength" xml:space="preserve"><value>Can't exceed {0} characters.</value></data>
+  <data name="Val_Required_ClientName" xml:space="preserve"><value>Client name is required.</value></data>
+  <data name="Val_Required_VatId" xml:space="preserve"><value>VAT ID is required.</value></data>
+  <data name="Val_Currency_Required" xml:space="preserve"><value>Currency is required.</value></data>
+  <data name="Val_Currency_Length" xml:space="preserve"><value>Currency must be 3 characters (e.g. USD).</value></data>
+  <data name="Val_Required_ProjectName" xml:space="preserve"><value>Project name is required.</value></data>
+  <data name="Val_Required_ProjectCode" xml:space="preserve"><value>Project code is required.</value></data>
+  <data name="Val_Invalid_BillingType" xml:space="preserve"><value>Billing type is not valid.</value></data>
+  <data name="Val_Invalid_Json" xml:space="preserve"><value>Config must be valid JSON.</value></data>
+  <data name="Val_Select_Client" xml:space="preserve"><value>You must select a client.</value></data>
+  <data name="Val_Select_Project" xml:space="preserve"><value>You must select a project.</value></data>
+  <data name="Val_Select_BankAccount" xml:space="preserve"><value>You must select a bank account.</value></data>
+  <data name="Val_Required_InvoiceNumber" xml:space="preserve"><value>Invoice number is required.</value></data>
+  <data name="Val_DueDate_BeforeInvoiceDate" xml:space="preserve"><value>Due date can't be earlier than the invoice date.</value></data>
+  <data name="Val_VatPercent_Range" xml:space="preserve"><value>VAT percent must be between 0 and 100.</value></data>
+  <data name="Val_VacationDays_Negative" xml:space="preserve"><value>Vacation days can't be negative.</value></data>
+  <data name="Val_WorkedDays_Negative" xml:space="preserve"><value>Worked days can't be negative.</value></data>
+  <data name="Val_WorkedDays_RequiredWithVacation" xml:space="preserve"><value>If there were vacation days, indicate how many days were worked.</value></data>
+  <data name="Val_OvertimeHours_Negative" xml:space="preserve"><value>Overtime hours can't be negative.</value></data>
+  <data name="Val_AdditionalMinutes_Negative" xml:space="preserve"><value>Additional minutes can't be negative.</value></data>
+  <data name="Val_Required_BankName" xml:space="preserve"><value>Bank name is required.</value></data>
+  <data name="Val_Required_TaxId" xml:space="preserve"><value>Tax ID is required.</value></data>
+  <data name="Val_Required_CompanyName" xml:space="preserve"><value>Company name is required.</value></data>
+  <data name="Val_Dimension1_Required" xml:space="preserve"><value>The first dimension (e.g. city) is required.</value></data>
+  <data name="Val_Rate_MustBePositive" xml:space="preserve"><value>Rate must be greater than 0.</value></data>
+  <data name="Val_Payment_InvoiceRequired" xml:space="preserve"><value>The invoice is required.</value></data>
+  <data name="Val_Payment_AmountPositive" xml:space="preserve"><value>Payment amount must be greater than 0.</value></data>
+
+  <!-- EmailPreviewModal -->
+  <data name="EmailPreview_Title" xml:space="preserve"><value>Send invoice by email</value></data>
+  <data name="EmailPreview_NotConfiguredPrefix" xml:space="preserve"><value>You haven't set up your email yet. Go to</value></data>
+  <data name="EmailPreview_NotConfiguredSuffix" xml:space="preserve"><value>first.</value></data>
+  <data name="EmailPreview_NoClientEmail" xml:space="preserve"><value>This client doesn't have an email on file. Add it in the client's record first.</value></data>
+  <data name="EmailPreview_Message" xml:space="preserve"><value>Message</value></data>
+  <data name="EmailPreview_Attachments" xml:space="preserve"><value>Attachments</value></data>
+  <data name="EmailPreview_InvoicePdf" xml:space="preserve"><value>Invoice (PDF)</value></data>
+  <data name="EmailPreview_SendButton" xml:space="preserve"><value>Send</value></data>
+  <data name="EmailPreview_Sending" xml:space="preserve"><value>Sending...</value></data>
+</root>

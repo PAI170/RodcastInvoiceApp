@@ -1,10 +1,12 @@
 using FluentValidation;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.Data;
 using RodcastInvoiceApp.Web.DataTransferObjects.BankAccount;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Resources;
 using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
@@ -15,17 +17,20 @@ namespace RodcastInvoiceApp.Web.Services
         private readonly IValidator<BankAccountCreateDto> _createValidator;
         private readonly IValidator<BankAccountUpdateDto> _updateValidator;
         private readonly ICurrentUserAccessor _currentUser;
+        private readonly IStringLocalizer<SharedResource> _loc;
 
         public BankAccountService(
             AppDbContext context,
             IValidator<BankAccountCreateDto> createValidator,
             IValidator<BankAccountUpdateDto> updateValidator,
-            ICurrentUserAccessor currentUser)
+            ICurrentUserAccessor currentUser,
+            IStringLocalizer<SharedResource> loc)
         {
             _context = context;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
             _currentUser = currentUser;
+            _loc = loc;
         }
 
         public async Task<IEnumerable<BankAccountResponseDto>> GetAllAsync()
@@ -41,7 +46,7 @@ namespace RodcastInvoiceApp.Web.Services
             var bankAccount = await _context.BankAccounts
                 .AsNoTracking()
                 .FirstOrDefaultAsync(b => b.Id == id)
-                ?? throw new NotFoundException("Cuenta bancaria no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_BankAccountNotFound"]);
 
             return bankAccount.Adapt<BankAccountResponseDto>();
         }
@@ -66,7 +71,7 @@ namespace RodcastInvoiceApp.Web.Services
 
             var bankAccount = await _context.BankAccounts
                 .FirstOrDefaultAsync(b => b.Id == id)
-                ?? throw new NotFoundException("Cuenta bancaria no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_BankAccountNotFound"]);
 
             dto.Adapt(bankAccount);
             await _context.SaveChangesAsync();
@@ -80,12 +85,12 @@ namespace RodcastInvoiceApp.Web.Services
 
             var bankAccount = await _context.BankAccounts
                 .FirstOrDefaultAsync(b => b.Id == id)
-                ?? throw new NotFoundException("Cuenta bancaria no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_BankAccountNotFound"]);
 
             var hasInvoices = await _context.Invoices.AnyAsync(i => i.BankAccountId == id);
             if (hasInvoices)
                 throw new ConflictException(
-                    "No se puede eliminar la cuenta bancaria porque tiene facturas asociadas.");
+                    _loc["SvcErr_BankAccountHasInvoices"]);
 
             _context.BankAccounts.Remove(bankAccount);
             await _context.SaveChangesAsync();

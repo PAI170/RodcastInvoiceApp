@@ -1,31 +1,43 @@
+using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.Data.Models;
 using RodcastInvoiceApp.Web.DataTransferObjects.Invoice;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Resources;
 using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
 {
     public class InvoiceEmailService : IInvoiceEmailService
     {
+        // Fijo: siempre van en copia, nadie los puede editar desde la UI.
+        private static readonly string[] FixedCcRecipients =
+        {
+            "fernando.catala@hemmersbach.com",
+            "maciej.wrobel@hemmersbach.com"
+        };
+
         private readonly IInvoiceService _invoiceService;
         private readonly IInvoicePdfService _invoicePdfService;
         private readonly ITimesheetService _timesheetService;
         private readonly IEmailSender _emailSender;
         private readonly ISmtpCredentialsProtector _credentialsProtector;
+        private readonly IStringLocalizer<SharedResource> _loc;
 
         public InvoiceEmailService(
             IInvoiceService invoiceService,
             IInvoicePdfService invoicePdfService,
             ITimesheetService timesheetService,
             IEmailSender emailSender,
-            ISmtpCredentialsProtector credentialsProtector)
+            ISmtpCredentialsProtector credentialsProtector,
+            IStringLocalizer<SharedResource> loc)
         {
             _invoiceService = invoiceService;
             _invoicePdfService = invoicePdfService;
             _timesheetService = timesheetService;
             _emailSender = emailSender;
             _credentialsProtector = credentialsProtector;
+            _loc = loc;
         }
 
         public async Task<InvoiceEmailPreviewDto> BuildPreviewAsync(int invoiceId, ApplicationUser sender)
@@ -35,22 +47,34 @@ namespace RodcastInvoiceApp.Web.Services
             return new InvoiceEmailPreviewDto
             {
                 ToEmail = invoice.ClientEmail,
+                CcEmails = FixedCcRecipients,
                 Subject = BuildSubject(invoice.InvoiceNumber),
-                Body = BuildBody(invoice.ClientName, invoice.InvoiceNumber),
+                Body = BuildBody(invoice.InvoiceNumber),
+                SignatureHtml = sender.EmailSignatureHtml,
                 IncludesTimesheet = invoice.HasTimesheet,
                 SenderConfigured = IsSenderConfigured(sender)
             };
         }
 
-        public async Task SendAsync(int invoiceId, ApplicationUser sender)
+        public async Task ValidateSendableAsync(int invoiceId, ApplicationUser sender)
         {
             if (!IsSenderConfigured(sender))
-                throw new BadRequestException("Configurá tu correo en \"Mi correo\" antes de poder enviar facturas.");
+                throw new BadRequestException(_loc["SvcErr_EmailSenderNotConfigured"]);
 
             var invoice = await _invoiceService.GetByIdAsync(invoiceId);
 
             if (string.IsNullOrWhiteSpace(invoice.ClientEmail))
-                throw new BadRequestException("El cliente no tiene un email configurado.");
+                throw new BadRequestException(_loc["SvcErr_ClientNoEmail"]);
+
+            if (!invoice.HasTimesheet)
+                throw new BadRequestException(_loc["SvcErr_TimesheetNotGenerated"]);
+        }
+
+        public async Task<InvoiceResponseDto> SendAsync(int invoiceId, ApplicationUser sender)
+        {
+            await ValidateSendableAsync(invoiceId, sender);
+
+            var invoice = await _invoiceService.GetByIdAsync(invoiceId);
 
             var attachments = new List<EmailAttachment>
             {
@@ -58,17 +82,13 @@ namespace RodcastInvoiceApp.Web.Services
                 {
                     FileName = $"Invoice-{invoice.InvoiceNumber}.pdf",
                     Content = await _invoicePdfService.GenerateAsync(invoiceId)
-                }
-            };
-
-            if (invoice.HasTimesheet)
-            {
-                attachments.Add(new EmailAttachment
+                },
+                new()
                 {
                     FileName = $"Timesheet-{invoice.InvoiceNumber}.pdf",
                     Content = await _timesheetService.GeneratePdfAsync(invoiceId)
-                });
-            }
+                }
+            };
 
             var credentials = new SmtpCredentials
             {
@@ -80,8 +100,10 @@ namespace RodcastInvoiceApp.Web.Services
             };
 
             await _emailSender.SendAsync(
-                credentials, invoice.ClientEmail, BuildSubject(invoice.InvoiceNumber),
-                BuildBody(invoice.ClientName, invoice.InvoiceNumber), attachments);
+                credentials, invoice.ClientEmail!, FixedCcRecipients, BuildSubject(invoice.InvoiceNumber),
+                BuildBody(invoice.InvoiceNumber), sender.EmailSignatureHtml, attachments);
+
+            return await _invoiceService.UpdateStatusAsync(invoiceId, InvoiceStatus.Sent);
         }
 
         private static bool IsSenderConfigured(ApplicationUser sender) =>
@@ -90,11 +112,8 @@ namespace RodcastInvoiceApp.Web.Services
             && !string.IsNullOrWhiteSpace(sender.SmtpUsername)
             && !string.IsNullOrWhiteSpace(sender.SmtpPasswordProtected);
 
-        private static string BuildSubject(string invoiceNumber) => $"Factura {invoiceNumber} - Rodcast Solutions";
+        private static string BuildSubject(string invoiceNumber) => $"Invoice {invoiceNumber}";
 
-        private static string BuildBody(string clientName, string invoiceNumber) =>
-            $"Estimado/a {clientName},\n\n" +
-            $"Adjunto la factura {invoiceNumber} y el timesheet correspondiente (si aplica).\n\n" +
-            "Saludos,\nRodcast Solutions";
+        private static string BuildBody(string invoiceNumber) => $"Invoice {invoiceNumber} attached.";
     }
 }

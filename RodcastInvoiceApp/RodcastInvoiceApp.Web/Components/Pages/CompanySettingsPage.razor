@@ -1,16 +1,19 @@
 @page "/company-settings"
 @attribute [Authorize(Roles = AppRoles.Admin)]
+@using Microsoft.Extensions.Localization
 @using RodcastInvoiceApp.Web.Data.Models
 @using RodcastInvoiceApp.Web.DataTransferObjects.CompanySettings
 @using RodcastInvoiceApp.Web.Exceptions
 @using RodcastInvoiceApp.Web.Interfaces
+@using RodcastInvoiceApp.Web.Resources
 @inject ICompanySettingsService CompanySettingsService
+@inject IStringLocalizer<SharedResource> Loc
 
-<PageTitle>Datos de la Empresa</PageTitle>
+<PageTitle>@Loc["CompanySettings_Title"]</PageTitle>
 
-<h1>Datos de la Empresa</h1>
+<h1>@Loc["CompanySettings_Title"]</h1>
 
-<p class="text-muted">Estos datos se usan para generar el PDF de las facturas (nombre, dirección, Tax ID, logo, firma).</p>
+<p class="text-muted">@Loc["CompanySettings_Description"]</p>
 
 @if (errorMessage is not null)
 {
@@ -24,34 +27,34 @@
 
 @if (settings is null)
 {
-    <p><em>Cargando...</em></p>
+    <p><em>@Loc["Common_Loading"]</em></p>
 }
 else
 {
     <EditForm Model="settings" FormName="CompanySettingsForm" OnValidSubmit="HandleSave">
         <div class="row g-2" style="max-width: 700px;">
             <div class="col-md-12">
-                <label class="form-label">Nombre</label>
+                <label class="form-label">@Loc["Field_Name"]</label>
                 <InputText class="form-control" @bind-Value="settings.Name" />
             </div>
             <div class="col-md-12">
-                <label class="form-label">Dirección</label>
+                <label class="form-label">@Loc["Field_Address"]</label>
                 <InputText class="form-control" @bind-Value="settings.Address" />
             </div>
             <div class="col-md-6">
-                <label class="form-label">Tax ID</label>
+                <label class="form-label">@Loc["Field_TaxId"]</label>
                 <InputText class="form-control" @bind-Value="settings.TaxId" />
             </div>
             <div class="col-md-6">
-                <label class="form-label">Ruta del logo (opcional)</label>
+                <label class="form-label">@Loc["CompanySettings_LogoPath"]</label>
                 <InputText class="form-control" @bind-Value="settings.LogoPath" />
             </div>
             <div class="col-md-6">
-                <label class="form-label">Ruta de la firma (opcional)</label>
+                <label class="form-label">@Loc["CompanySettings_SignaturePath"]</label>
                 <InputText class="form-control" @bind-Value="settings.SignaturePath" />
             </div>
         </div>
-        <button type="submit" class="btn btn-primary mt-3">Guardar</button>
+        <button type="submit" class="btn btn-primary mt-3">@Loc["Common_Save"]</button>
     </EditForm>
 }
 
@@ -72,7 +75,7 @@ else
         try
         {
             settings = await CompanySettingsService.UpdateAsync(settings!);
-            successMessage = "Datos guardados.";
+            successMessage = Loc["CompanySettings_Saved"];
         }
         catch (BadRequestException ex)
         {
@@ -80,7 +83,7 @@ else
         }
         catch (Exception)
         {
-            errorMessage = "No se pudo completar la acción. Intentá de nuevo en unos segundos.";
+            errorMessage = Loc["Common_GenericError"];
         }
     }
 }

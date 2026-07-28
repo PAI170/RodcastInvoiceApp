@@ -1,48 +1,56 @@
+@using Microsoft.Extensions.Localization
 @using RodcastInvoiceApp.Web.DataTransferObjects.Invoice
+@using RodcastInvoiceApp.Web.Resources
+@inject IStringLocalizer<SharedResource> Loc
 
 @if (IsVisible)
 {
     <div class="email-modal-backdrop" @onclick="Close">
         <div class="email-modal-content" @onclick:stopPropagation="true">
             <div class="email-modal-header">
-                <strong>Enviar factura por correo</strong>
-                <button type="button" class="btn-close" aria-label="Cerrar" @onclick="Close"></button>
+                <strong>@Loc["EmailPreview_Title"]</strong>
+                <button type="button" class="btn-close" aria-label="@Loc["Common_Close"]" @onclick="Close"></button>
             </div>
             <div class="p-3">
                 @if (Preview is null)
                 {
-                    <p><em>Cargando...</em></p>
+                    <p><em>@Loc["Common_Loading"]</em></p>
                 }
                 else
                 {
                     @if (!Preview.SenderConfigured)
                     {
                         <div class="alert alert-warning">
-                            Todavía no configuraste tu correo. Andá a <a href="/mi-correo">Mi correo</a> primero.
+                            @Loc["EmailPreview_NotConfiguredPrefix"] <a href="/ajustes">@Loc["Nav_Settings"]</a> @Loc["EmailPreview_NotConfiguredSuffix"]
                         </div>
                     }
                     else if (string.IsNullOrWhiteSpace(Preview.ToEmail))
                     {
                         <div class="alert alert-warning">
-                            Este cliente no tiene un email cargado. Agregalo en la ficha del cliente primero.
+                            @Loc["EmailPreview_NoClientEmail"]
                         </div>
                     }
                     <dl class="row mb-0">
-                        <dt class="col-sm-2">Para</dt>
-                        <dd class="col-sm-10">@(Preview.ToEmail ?? "(sin email)")</dd>
-                        <dt class="col-sm-2">Asunto</dt>
+                        <dt class="col-sm-2">@Loc["Email_To"]</dt>
+                        <dd class="col-sm-10">@(Preview.ToEmail ?? Loc["Email_NoEmailPlaceholder"])</dd>
+                        @if (Preview.CcEmails.Count > 0)
+                        {
+                            <dt class="col-sm-2">@Loc["Field_Cc"]</dt>
+                            <dd class="col-sm-10">@string.Join(", ", Preview.CcEmails)</dd>
+                        }
+                        <dt class="col-sm-2">@Loc["Field_Subject"]</dt>
                         <dd class="col-sm-10">@Preview.Subject</dd>
-                        <dt class="col-sm-2">Mensaje</dt>
+                        <dt class="col-sm-2">@Loc["EmailPreview_Message"]</dt>
                         <dd class="col-sm-10" style="white-space: pre-wrap;">@Preview.Body</dd>
-                        <dt class="col-sm-2">Adjuntos</dt>
-                        <dd class="col-sm-10">Factura (PDF)@(Preview.IncludesTimesheet ? ", Timesheet (PDF)" : "")</dd>
+                        <dt class="col-sm-2">@Loc["EmailPreview_Attachments"]</dt>
+                        <dd class="col-sm-10">@Loc["EmailPreview_InvoicePdf"]@(Preview.IncludesTimesheet ? ", Timesheet (PDF)" : "")</dd>
                     </dl>
                 }
             </div>
             <div class="p-3 border-top d-flex justify-content-end gap-2">
-                <button class="btn btn-secondary" @onclick="Close">Cancelar</button>
+                <button class="btn btn-secondary" @onclick="Close">@Loc["Common_Cancel"]</button>
                 <button class="btn btn-primary" disabled="@(!CanSend || IsSending)" @onclick="Confirm">
-                    @(IsSending ? "Enviando..." : "Enviar")
+                    @(IsSending ? Loc["EmailPreview_Sending"] : Loc["EmailPreview_SendButton"])
                 </button>
             </div>
         </div>

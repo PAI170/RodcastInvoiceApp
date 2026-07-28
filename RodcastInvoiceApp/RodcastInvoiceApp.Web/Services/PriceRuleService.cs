@@ -1,10 +1,12 @@
 using FluentValidation;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using RodcastInvoiceApp.Web.Data;
 using RodcastInvoiceApp.Web.DataTransferObjects.PriceRule;
 using RodcastInvoiceApp.Web.Exceptions;
 using RodcastInvoiceApp.Web.Interfaces;
+using RodcastInvoiceApp.Web.Resources;
 using RodcastInvoiceApp.Web.Security;
 
 namespace RodcastInvoiceApp.Web.Services
@@ -15,17 +17,20 @@ namespace RodcastInvoiceApp.Web.Services
         private readonly IValidator<PriceRuleCreateDto> _createValidator;
         private readonly IValidator<PriceRuleUpdateDto> _updateValidator;
         private readonly ICurrentUserAccessor _currentUser;
+        private readonly IStringLocalizer<SharedResource> _loc;
 
         public PriceRuleService(
             AppDbContext context,
             IValidator<PriceRuleCreateDto> createValidator,
             IValidator<PriceRuleUpdateDto> updateValidator,
-            ICurrentUserAccessor currentUser)
+            ICurrentUserAccessor currentUser,
+            IStringLocalizer<SharedResource> loc)
         {
             _context = context;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
             _currentUser = currentUser;
+            _loc = loc;
         }
 
         public async Task<IEnumerable<PriceRuleResponseDto>> GetAllAsync(int projectId)
@@ -44,7 +49,7 @@ namespace RodcastInvoiceApp.Web.Services
 
             var projectExists = await _context.Projects.AnyAsync(p => p.Id == dto.ProjectId);
             if (!projectExists)
-                throw new NotFoundException("Proyecto no encontrado.");
+                throw new NotFoundException(_loc["SvcErr_ProjectNotFound"]);
 
             var priceRule = dto.Adapt<Data.Models.PriceRule>();
 
@@ -61,7 +66,7 @@ namespace RodcastInvoiceApp.Web.Services
 
             var priceRule = await _context.PriceRules
                 .FirstOrDefaultAsync(pr => pr.Id == id)
-                ?? throw new NotFoundException("Tarifa no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_PriceRuleNotFound"]);
 
             dto.Adapt(priceRule);
             await _context.SaveChangesAsync();
@@ -75,7 +80,7 @@ namespace RodcastInvoiceApp.Web.Services
 
             var priceRule = await _context.PriceRules
                 .FirstOrDefaultAsync(pr => pr.Id == id)
-                ?? throw new NotFoundException("Tarifa no encontrada.");
+                ?? throw new NotFoundException(_loc["SvcErr_PriceRuleNotFound"]);
 
             _context.PriceRules.Remove(priceRule);
             await _context.SaveChangesAsync();
