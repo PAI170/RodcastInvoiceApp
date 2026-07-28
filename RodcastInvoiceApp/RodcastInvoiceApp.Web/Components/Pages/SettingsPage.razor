@@ -12,7 +12,7 @@
 <PageTitle>@Loc["Settings_Title"]</PageTitle>
 
 <h1>@Loc["Settings_Title"]</h1>
-<p class="text-muted">
+<p class="text-muted mb-4">
     @Loc["Settings_Description"]
 </p>
 
@@ -34,7 +34,7 @@ else
 {
     <EditForm Model="model" FormName="SettingsForm" OnValidSubmit="HandleSave">
         <h2 class="h5">@Loc["Settings_SmtpSection"]</h2>
-        <div class="row g-2" style="max-width: 600px;">
+        <div class="row g-3" style="max-width: 600px;">
             <div class="col-md-8">
                 <label class="form-label">@Loc["Settings_Host"]</label>
                 <InputText class="form-control" placeholder="mail.tudominio.com" @bind-Value="model.Host" />
@@ -54,8 +54,10 @@ else
             </div>
         </div>
 
-        <h2 class="h5 mt-4">@Loc["Settings_SignatureSection"]</h2>
-        <div class="row g-2" style="max-width: 600px;">
+        <hr class="my-4" style="max-width: 600px;" />
+
+        <h2 class="h5">@Loc["Settings_SignatureSection"]</h2>
+        <div class="row g-3" style="max-width: 600px;">
             <div class="col-12">
                 <label class="form-label">@Loc["Settings_SignatureLabel"]</label>
                 <InputTextArea class="form-control" rows="8" style="font-family: monospace; font-size: 0.85rem;"
@@ -66,7 +68,9 @@ else
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary mt-3">@Loc["Common_Save"]</button>
+        <hr class="my-4" style="max-width: 600px;" />
+
+        <button type="submit" class="btn btn-primary">@Loc["Common_Save"]</button>
     </EditForm>
 }
 
